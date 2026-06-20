@@ -1,5 +1,5 @@
 
-# copy-project
+# Copy4AI
 
 **Copy a project's structure and file contents to your clipboard (or file/STDOUT) – just like the copy4AI VSCode extension, but as a standalone CLI.**
 
@@ -146,6 +146,3 @@ This project is licensed under the MIT License – see the [LICENSE](LICENSE) fi
 ---
 
 **Inspired by the copy4AI VSCode extension. Contributions welcome!**
-```
-
-You can adjust the repository URLs and any additional details as needed.
