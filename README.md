@@ -1,3 +1,7 @@
+# Remember to sign the project with gpg.
+
+
+
 
 # Copy4AI
 
