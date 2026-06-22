@@ -1,4 +1,4 @@
-Here's the revised `README.md`, polished and restructured for clarity while keeping all your original details:
+# sign it with gpg
 
 # 🧩 ccp – AI-Friendly Project Snapshot & Scaffold Tool
 
