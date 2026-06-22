@@ -3,10 +3,11 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use copy_project::{
     create_tree, fmt_colored_tree, load_template, nodes_to_entries, parse_tree_definition,
-    render_markdown, render_tree_definition, snapshot, GenerateOptions, Snapshot, WalkOptions,
+    render_markdown, render_structure, render_tree_definition, snapshot, GenerateOptions, Snapshot,
+    WalkOptions,
 };
 use std::fs;
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -27,7 +28,7 @@ struct Cli {
 
     /// Copy the result to the system clipboard (requires the 'clipboard' feature)
     #[cfg(feature = "clipboard")]
-    #[arg(long)]
+    #[arg(long, short = 'c')]
     clipboard: bool,
 
     /// Include hidden files and directories (those starting with a dot)
@@ -53,6 +54,10 @@ struct Cli {
     /// Omit file contents from reverse .tree output
     #[arg(long)]
     no_content: bool,
+
+    /// Output only the project structure, without file contents
+    #[arg(long, short = 's')]
+    structure: bool,
 
     /// Output a reusable .tree definition instead of Markdown
     #[arg(long)]
@@ -167,6 +172,47 @@ struct ReverseCommand {
     quiet: bool,
 }
 
+#[cfg(feature = "clipboard")]
+fn set_clipboard(text: &str) -> Result<()> {
+    use std::io::Write;
+
+    // On Linux, try wl-copy (Wayland) and xclip (X11) first.
+    // These force the active selection, bypassing KDE's clipboard history.
+    if cfg!(target_os = "linux") {
+        if let Ok(mut child) = std::process::Command::new("wl-copy")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+        {
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(text.as_bytes())?;
+            }
+            let status = child.wait()?;
+            if status.success() {
+                return Ok(());
+            }
+        }
+        if let Ok(mut child) = std::process::Command::new("xclip")
+            .args(["-selection", "clipboard", "-i"])
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+        {
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(text.as_bytes())?;
+            }
+            let status = child.wait()?;
+            if status.success() {
+                return Ok(());
+            }
+        }
+    }
+    // Fallback to arboard for non-Linux or if neither tool is installed
+    let mut clipboard = arboard::Clipboard::new().context("Failed to access clipboard")?;
+    clipboard
+        .set_text(text)
+        .context("Failed to set clipboard")?;
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
@@ -194,22 +240,20 @@ fn run_copy(cli: Cli) -> Result<()> {
 
     let output = if cli.reverse {
         render_tree_definition(&scan, cli.max_size, cli.no_content)
+    } else if cli.structure {
+        render_structure(&scan)
     } else {
         render_markdown(&scan, cli.max_size)
     };
 
     #[cfg(feature = "clipboard")]
     if cli.clipboard {
-        let mut clipboard = arboard::Clipboard::new().context("Failed to access clipboard")?;
-        clipboard
-            .set_text(&output)
-            .context("Failed to set clipboard text")?;
+        set_clipboard(&output)?;
         if !cli.quiet {
             println!("Output copied to clipboard.");
         }
         return Ok(());
     }
-
     write_output(cli.output, &output)
 }
 
@@ -222,6 +266,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         mktree_ignore: true,
         max_size: command.max_size,
     };
+
     let scan = snapshot(&command.root, &options)?;
     if command.dry_run && !command.quiet {
         aprintln!("{}", fmt_colored_tree(&scan.tree, ""));
@@ -229,6 +274,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
     if command.verbose && !command.quiet {
         eprintln!("Scanned {}", command.root.display());
     }
+
     let output = render_tree_definition(&scan, command.max_size, command.no_content);
     write_output(command.output, &output)
 }
@@ -291,6 +337,8 @@ fn write_output(output_path: Option<PathBuf>, output: &str) -> Result<()> {
     if let Some(path) = output_path {
         fs::write(&path, output).with_context(|| format!("Failed to write {}", path.display()))?;
     } else {
+        use std::io::Write;
+
         io::stdout()
             .write_all(output.as_bytes())
             .context("Failed to write to stdout")?;

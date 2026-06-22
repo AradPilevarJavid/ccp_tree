@@ -6,6 +6,67 @@ use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
+pub const DEFAULT_EXCLUDES: &[&str] = &[
+    "target/",
+    "node_modules/",
+    "dist/",
+    "build/",
+    ".next/",
+    ".nuxt/",
+    ".svelte-kit/",
+    ".turbo/",
+    ".cache/",
+    "coverage/",
+    "__pycache__/",
+    ".pytest_cache/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    ".tox/",
+    ".venv/",
+    "venv/",
+    ".gradle/",
+    "cmake-build-debug/",
+    "cmake-build-release/",
+    "*.log",
+    "logs/",
+    ".log",
+    "out/",
+    "bin/",
+    "obj/",
+    "*.egg-info/",
+    ".eggs/",
+    ".pnp.*",
+    ".yarn/",
+    "vendor/",
+    "Pods/",
+    ".idea/",
+    ".vscode/",
+    "*.swp",
+    "*.swo",
+    ".DS_Store",
+    ".nyc_output/",
+    "htmlcov/",
+    ".coverage",
+    "test-results/",
+    "playwright-report/",
+    "tmp/",
+    "temp/",
+    ".tmp/",
+    "Thumbs.db",
+    "desktop.ini",
+    "*.mp4",
+    "*.zip",
+    "*.tar.gz",
+    "*.pdf",
+    "public/uploads/",
+    "storage/",
+    "data/",
+    ".env.local",
+    ".env.*.local",
+    ".git/",
+    "Cargo.lock",
+];
+
 #[derive(Debug, Clone)]
 pub struct Entry {
     pub name: String,
@@ -47,6 +108,47 @@ pub enum FileText {
 }
 
 #[derive(Debug, Clone)]
+pub struct ExcludePattern {
+    raw: String,
+    pattern: Pattern,
+    directory_only: bool,
+}
+
+impl ExcludePattern {
+    pub fn new(raw: &str) -> Result<Self> {
+        let directory_only = raw.ends_with('/');
+        let pattern_text = raw.trim_end_matches('/');
+        let pattern = Pattern::new(pattern_text)
+            .with_context(|| format!("Invalid exclusion pattern: {raw}"))?;
+        Ok(Self {
+            raw: pattern_text.to_string(),
+            pattern,
+            directory_only,
+        })
+    }
+
+    pub fn matches(&self, relative: &Path, is_dir: bool) -> bool {
+        if self.directory_only && !is_dir {
+            return false;
+        }
+
+        let relative_text = relative.to_string_lossy().replace('\\', "/");
+        if self.pattern.matches(&relative_text) {
+            return true;
+        }
+
+        if self.raw.contains('/') {
+            return false;
+        }
+
+        relative
+            .components()
+            .filter_map(|component| component.as_os_str().to_str())
+            .any(|component| self.pattern.matches(component))
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct TreeNode {
     pub name: String,
     pub is_dir: bool,
@@ -73,7 +175,7 @@ pub fn load_ignore_patterns(
     root: &Path,
     excludes: &[String],
     use_mktree_ignore: bool,
-) -> Result<Vec<Pattern>> {
+) -> Result<Vec<ExcludePattern>> {
     let mut patterns = excludes.to_vec();
     if use_mktree_ignore {
         let ignore_path = root.join(".mktreeignore");
@@ -92,41 +194,29 @@ pub fn load_ignore_patterns(
 
     patterns
         .iter()
-        .map(|pattern| {
-            Pattern::new(pattern).with_context(|| format!("Invalid exclusion pattern: {pattern}"))
-        })
+        .map(|pattern| ExcludePattern::new(pattern))
         .collect()
 }
 
-pub fn should_exclude(relative: &Path, patterns: &[Pattern]) -> bool {
-    let rel_str = relative.to_string_lossy();
-    patterns.iter().any(|pattern| pattern.matches(&rel_str))
+pub fn load_default_exclude_patterns() -> Result<Vec<ExcludePattern>> {
+    DEFAULT_EXCLUDES
+        .iter()
+        .map(|pattern| ExcludePattern::new(pattern))
+        .collect()
+}
+
+pub fn should_exclude(relative: &Path, is_dir: bool, patterns: &[ExcludePattern]) -> bool {
+    patterns
+        .iter()
+        .any(|pattern| pattern.matches(relative, is_dir))
 }
 
 pub fn is_useless_dir_name(name: &str) -> bool {
-    matches!(
-        name,
-        "target"
-            | "node_modules"
-            | "dist"
-            | "build"
-            | ".next"
-            | ".nuxt"
-            | ".svelte-kit"
-            | ".turbo"
-            | ".cache"
-            | "coverage"
-            | "__pycache__"
-            | ".pytest_cache"
-            | ".mypy_cache"
-            | ".ruff_cache"
-            | ".tox"
-            | ".venv"
-            | "venv"
-            | ".gradle"
-            | "cmake-build-debug"
-            | "cmake-build-release"
-    )
+    DEFAULT_EXCLUDES
+        .iter()
+        .filter(|pattern| pattern.ends_with('/') && !pattern.contains('*'))
+        .map(|pattern| pattern.trim_end_matches('/'))
+        .any(|pattern| pattern == name)
 }
 
 pub fn is_useless_dir(path: &Path) -> bool {
@@ -154,8 +244,17 @@ pub fn insert_entry(root: &mut BTreeMap<String, Entry>, components: &[String], i
 pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
     let root = root.to_path_buf();
     let root_for_filter = root.clone();
-    let exclude_patterns = load_ignore_patterns(&root, &options.exclude, options.mktree_ignore)?;
     let include_useless = options.include_useless;
+    let mut exclude_patterns = if include_useless {
+        Vec::new()
+    } else {
+        load_default_exclude_patterns()?
+    };
+    exclude_patterns.extend(load_ignore_patterns(
+        &root,
+        &options.exclude,
+        options.mktree_ignore,
+    )?);
 
     let mut builder = WalkBuilder::new(&root);
     builder
@@ -170,16 +269,11 @@ pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
             return true;
         }
         let relative = path.strip_prefix(&root_for_filter).unwrap_or(path);
-        if !include_useless
-            && entry
-                .file_type()
-                .map(|file_type| file_type.is_dir())
-                .unwrap_or(false)
-            && is_useless_dir(relative)
-        {
-            return false;
-        }
-        !should_exclude(relative, &exclude_patterns)
+        let is_dir = entry
+            .file_type()
+            .map(|file_type| file_type.is_dir())
+            .unwrap_or(false);
+        !should_exclude(relative, is_dir, &exclude_patterns)
     });
 
     let mut tree = BTreeMap::new();
@@ -300,6 +394,11 @@ pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
         output.push_str("\n```\n");
     }
     output
+}
+
+pub fn render_structure(snapshot: &Snapshot) -> String {
+    let tree_str = fmt_tree(&snapshot.tree, "");
+    format!("# Project Structure\n\n```\n{}```\n", tree_str)
 }
 
 pub fn render_tree_definition(snapshot: &Snapshot, max_size: u64, no_content: bool) -> String {
@@ -597,4 +696,78 @@ pub fn load_template(templates_dir: &Path, name: &str) -> Result<String> {
         "Template '{name}' was not found in {}",
         templates_dir.display()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn default_patterns() -> Vec<ExcludePattern> {
+        load_default_exclude_patterns().expect("default exclude patterns should be valid")
+    }
+
+    #[test]
+    fn default_excludes_match_nested_directories() {
+        let patterns = default_patterns();
+
+        assert!(should_exclude(
+            Path::new("frontend/node_modules/react/index.js"),
+            true,
+            &patterns
+        ));
+        assert!(should_exclude(
+            Path::new("app/.next/cache"),
+            true,
+            &patterns
+        ));
+        assert!(should_exclude(
+            Path::new("service/__pycache__"),
+            true,
+            &patterns
+        ));
+    }
+
+    #[test]
+    fn default_excludes_match_file_globs_and_exact_files() {
+        let patterns = default_patterns();
+
+        assert!(should_exclude(Path::new("debug.log"), false, &patterns));
+        assert!(should_exclude(
+            Path::new("src/.env.production.local"),
+            false,
+            &patterns
+        ));
+        assert!(should_exclude(Path::new("Cargo.lock"), false, &patterns));
+        assert!(should_exclude(
+            Path::new("docs/archive.tar.gz"),
+            false,
+            &patterns
+        ));
+    }
+
+    #[test]
+    fn directory_only_defaults_do_not_match_files_with_same_name() {
+        let patterns = default_patterns();
+
+        assert!(!should_exclude(Path::new("docs/target"), false, &patterns));
+    }
+
+    #[test]
+    fn structure_render_omits_file_contents_section() {
+        let mut tree = BTreeMap::new();
+        insert_entry(
+            &mut tree,
+            &[String::from("src"), String::from("main.rs")],
+            false,
+        );
+        let snapshot = Snapshot {
+            root: PathBuf::from("."),
+            tree,
+        };
+
+        let output = render_structure(&snapshot);
+
+        assert!(output.contains("# Project Structure"));
+        assert!(!output.contains("# File Contents"));
+    }
 }
