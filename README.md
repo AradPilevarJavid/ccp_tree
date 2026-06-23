@@ -3,7 +3,7 @@
 > 📸 Snapshot · 📋 Blueprint · 🏗️ Scaffold  
 > Capture a directory into a portable format and recreate it anywhere.
 
-[![Crates.io](https://img.shields.io/crates/v/copy-project)](https://crates.io/crates/copy-project)
+[![Crates.io](https://img.shields.io/crates/v/ccp)](https://crates.io/crates/ccp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 `ccp` is a command‑line tool I built for daily use. It turns a folder into a human‑readable, copy‑paste‑friendly **snapshot**, and that same snapshot back into a real directory tree. Written in Rust 🦀 with a lot of love ❤️.
@@ -35,14 +35,14 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 ### From Crates.io
 
 ```bash
-cargo install copy-project
+cargo install ccp
 ```
 
 This installs the `ccp` binary.  
 To enable clipboard support (optional, works out‑of‑the‑box on most systems):
 
 ```bash
-cargo install copy-project --features clipboard
+cargo install ccp --features clipboard
 ```
 
 > On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
@@ -50,8 +50,8 @@ cargo install copy-project --features clipboard
 ### From source
 
 ```bash
-git clone https://github.com/user/copy-project   # replace with actual repo
-cd copy-project
+git clone https://github.com/user/ccp
+cd ccp
 cargo build --release
 ```
 
