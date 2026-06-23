@@ -8,7 +8,7 @@ repository = "https://github.com/AradPilevarJavid/ccp"
 homepage = "https://github.com/AradPilevarJavid/ccp"
 documentation = "https://docs.rs/ccp"
 readme = "README.md"
-keywords = ["snapshot", "blueprint", "scaffold", "project", "tree", "markdown", "template", "cli"]
+keywords = ["snapshot", "blueprint", "scaffold", "markdown", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 authors = ["Arad Pilevar Javid"]
 
