@@ -365,4 +365,3 @@ Copyright (c) 2025 Arad Pilevar Javid.
 Feedback, issues, and pull requests are welcome!  
 Make sure to run `cargo test` before submitting.  
 If you want to add a new built‑in template, drop a `.tree` file into the `templates/` directory – the build script picks it up automatically.
-```
