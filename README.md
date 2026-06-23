@@ -70,7 +70,7 @@ ccp -o snapshot.md   # write directly to a file
 Scans a directory and writes its structure in the `.tree` format. Useful for creating templates.
 
 ```bash
-ccp reverse                     # current dir → <current-folder>.tree
+ccp reverse                     # current dir → ccp.tree
 ccp --reverse                   # same output behavior without the subcommand
 ccp reverse /path/to/project    # specific folder → project.tree
 ccp reverse -o template.tree    # choose the output file

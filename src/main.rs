@@ -333,13 +333,7 @@ fn default_tree_output_path(root: &Path) -> PathBuf {
         .file_name()
         .filter(|name| !name.is_empty() && *name != "." && *name != "..")
         .map(|name| name.to_string_lossy().into_owned())
-        .or_else(|| {
-            std::env::current_dir().ok().and_then(|path| {
-                path.file_name()
-                    .map(|name| name.to_string_lossy().into_owned())
-            })
-        })
-        .unwrap_or_else(|| "project".to_string());
+        .unwrap_or_else(|| "ccp".to_string());
 
     PathBuf::from(format!("{name}.tree"))
 }
