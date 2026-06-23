@@ -135,6 +135,11 @@ struct ReverseCommand {
     #[arg(short, long)]
     output: Option<PathBuf>,
 
+    /// Copy the result to the system clipboard (requires the 'clipboard' feature)
+    #[cfg(feature = "clipboard")]
+    #[arg(long, short = 'c')]
+    clipboard: bool,
+
     /// Include hidden files and directories
     #[arg(long)]
     include_hidden: bool,
@@ -250,7 +255,26 @@ fn run_copy(cli: Cli) -> Result<()> {
     if cli.clipboard {
         set_clipboard(&output)?;
         if !cli.quiet {
-            println!("Output copied to clipboard.");
+            let message = if cli.reverse {
+                if cli.all {
+                    "Tree definition (all files) copied to clipboard."
+                } else {
+                    "Tree definition copied to clipboard."
+                }
+            } else if cli.structure {
+                if cli.all {
+                    "Full project structure copied to clipboard."
+                } else {
+                    "Project structure copied to clipboard."
+                }
+            } else {
+                if cli.all {
+                    "Full project snapshot copied to clipboard."
+                } else {
+                    "Project snapshot copied to clipboard."
+                }
+            };
+            println!("{}", message);
         }
         return Ok(());
     }
@@ -276,6 +300,21 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
     }
 
     let output = render_tree_definition(&scan, command.max_size, command.no_content);
+
+    #[cfg(feature = "clipboard")]
+    if command.clipboard {
+        set_clipboard(&output)?;
+        if !command.quiet {
+            let message = if command.all {
+                "Tree definition (all files) copied to clipboard."
+            } else {
+                "Tree definition copied to clipboard."
+            };
+            println!("{}", message);
+        }
+        return Ok(());
+    }
+
     write_output(command.output, &output)
 }
 
