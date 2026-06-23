@@ -1,7 +1,7 @@
 use anstream::println as aprintln;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use copy_project::{
+use ccp::{
     create_tree, fmt_colored_tree, load_template, nodes_to_entries, parse_tree_definition,
     render_markdown, render_structure, render_tree_definition, snapshot, GenerateOptions, Snapshot,
     WalkOptions,
