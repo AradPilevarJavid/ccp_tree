@@ -1,4 +1,5 @@
 # ccp — Copy Project
+(crate: `ccp_tree`)
 
 > 📸 Snapshot · 📋 Blueprint · 🏗️ Scaffold  
 > Capture a directory into a portable format and recreate it anywhere.
@@ -35,7 +36,7 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 ### From Crates.io
 
 ```bash
-cargo install ccp
+cargo install ccp_tree
 ```
 
 This installs the `ccp` binary.  
@@ -50,7 +51,7 @@ cargo install ccp --features clipboard
 ### From source
 
 ```bash
-git clone https://github.com/user/ccp
+git clone https://github.com/AradPilevarJavid/ccp
 cd ccp
 cargo build --release
 ```
