@@ -1,0 +1,20 @@
+src/
+  main.py:|
+    def main():
+        print("Hello from ccp")
+    if __name__ == "__main__":
+        main()
+LICENSE: MIT License
+README.md:|
+  # My Python Project
+  Built with `ccp`.
+requirements.txt:|
+  # Add dependencies here
+.gitignore:|
+  __pycache__/
+  *.pyc
+  venv/
+  .env
+  *.egg-info
+  dist/
+  build/
