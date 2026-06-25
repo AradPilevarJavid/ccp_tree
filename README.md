@@ -353,6 +353,13 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 - **Templating engine**: you can pre‑process `.tree` files with environment variables or `sed` before feeding them to `ccp generate`.
 
 ---
+## Roadmap(TODO)
+- [ ] Add more built‑in templates (Rust, React, Go)
+- [ ] Handel files that are too lard (more than 1048576 bytes)
+- [ ] Better binary‑file detection and handeling (checksums)
+- [ ] Have the name of the project directory when printing the structure (minor change)
+- [ ] handel files like gifs
+
 
 ## License 📜
 
