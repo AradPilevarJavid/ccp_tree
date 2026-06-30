@@ -1,6 +1,6 @@
 [package]
 name = "ccp_tree"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "ccp: 📄 Snapshot, 📋 blueprint, 🏗️ scaffold. Instantly capture project structure & files to Markdown/.tree, then regenerate anywhere."
 license = "MIT"
