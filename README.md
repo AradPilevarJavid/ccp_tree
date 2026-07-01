@@ -4,7 +4,7 @@
 > 📸 Snapshot · 📋 Blueprint · 🏗️ Scaffold  
 > Capture a directory into a portable format and recreate it anywhere.
 
-[![Crates.io](https://img.shields.io/crates/v/ccp)](https://crates.io/crates/ccp_tree)
+[![Crates.io](https://img.shields.io/crates/v/ccp_tree)](https://crates.io/crates/ccp_tree)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 `ccp` is a command‑line tool I built for daily use. It turns a folder into a human‑readable, copy‑paste‑friendly **snapshot**, and that same snapshot back into a real directory tree. Written in Rust 🦀 with a lot of love ❤️.
