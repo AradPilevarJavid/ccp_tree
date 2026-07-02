@@ -1,7 +1,8 @@
 # Changelog
 
 ## [0.1.3]
-added --raw:this option is used so that the program woudln't generate a .tree.The too doesn't use much token if you don't use --raw.use this option if you want to be extreeamly token friendly.
+added --raw: this option outputs raw file contents without a directory tree. The tool doesn't use many tokens even by default, but if you want to be extremely token‑friendly, use `--raw`.
+
 
 
 ## [0.1.2]
