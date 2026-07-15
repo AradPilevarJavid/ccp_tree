@@ -359,6 +359,17 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 
 ---
 ## Roadmap(TODO)
+some of these are already partly done.
+- [ ] Add project statistics (files, directories, lines, size)
+- [ ] Estimate LLM token count for generated output
+- [ ] Support XML output format
+- [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
+- [ ] Detect and warn about potential secrets before exporting
+- [ ] Support scanning remote Git repositories without cloning manually
+- [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
+- [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`)
+- [ ] Add summary section to snapshots (statistics + token count)
+- [ ] Improve binary file handling with MIME-type detection
 - [ ] Add more built‑in templates (Rust, React, Go)
 - [ ] Handel files that are too lard (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
