@@ -365,9 +365,9 @@ some of these are already partly done.
 - [ ] Support XML output format
 - [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
 - [ ] Detect and warn about potential secrets before exporting
-- [ ] Support scanning remote Git repositories without cloning manually
+- [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
-- [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`)
+- [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw
 - [ ] Add summary section to snapshots (statistics + token count)
 - [ ] Improve binary file handling with MIME-type detection
 - [ ] Add more built‑in templates (Rust, React, Go)
