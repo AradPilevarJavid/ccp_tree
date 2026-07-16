@@ -1,0 +1,14 @@
+pkgbase = ccp_tree
+	pkgdesc = Generate AI-friendly project trees
+	pkgver = 0.3.2
+	pkgrel = 1
+	url = https://github.com/AradPilevarJavid/ccp_tree
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = cargo
+	depends = gcc-libs
+	source = https://crates.io/api/v1/crates/ccp_tree/0.3.2/download
+	sha256sums = SKIP
+
+pkgname = ccp_tree
