@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.5]
+
+### Changed
+- Updated project roadmap(The roadmap is actually fabulous) and documentation.
+
+## [0.1.4]
+
+### Added
+- Official Arch Linux AUR package support.
+- PKGBUILD and .SRCINFO for installing `ccp_tree` from the AUR.
+
+### Changed
+- Added Cargo.lock to the repository for reproducible builds.
+- Improved packaging workflow and release process.
+
+
 ## [0.1.3]
 added --raw: this option outputs raw file contents without a directory tree. The tool doesn't use many tokens even by default, but if you want to be extremely token‑friendly, use `--raw`.
 
