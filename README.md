@@ -61,6 +61,14 @@ cd ccp
 cargo build --release
 ```
 
+The Arch package also installs a generated `ccp(1)` man page. Cargo does not
+install man pages, but you can generate one locally with:
+
+```bash
+cargo run --release --bin ccp-mangen -- /tmp
+man -l /tmp/ccp.1
+```
+
 The binary will be at `./target/release/ccp`.
 
 > 💡 Pro‑tip: try `ccp --help`, `ccp reverse --help` and `ccp generate --help` after installation.

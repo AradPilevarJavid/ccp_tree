@@ -6,6 +6,8 @@ use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
+pub mod cli;
+
 include!(concat!(env!("OUT_DIR"), "/builtin_templates.rs"));
 
 pub const DEFAULT_EXCLUDES: &[&str] = &[
