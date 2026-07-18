@@ -502,22 +502,6 @@ fn render_markdown_stats(stats: &ProjectStats) -> String {
     )
 }
 
-fn render_raw_stats(stats: &ProjectStats) -> String {
-    format!(
-        "==== Project Statistics ====\n\
-         Files: {}\n\
-         Directories: {}\n\
-         Total lines: {}\n\
-         Total size: {}\n\
-         Estimated tokens: {}\n\n",
-        format_count(stats.files),
-        format_count(stats.dirs),
-        format_count(stats.lines),
-        format_size(stats.size),
-        format_count(stats.estimated_tokens),
-    )
-}
-
 fn prepend_stats<F>(mut stats: ProjectStats, body: &str, render_stats: F) -> String
 where
     F: Fn(&ProjectStats) -> String,
@@ -577,14 +561,7 @@ pub fn render_raw(snapshot: &Snapshot, max_size: u64) -> String {
         }
     }
 
-    let stats = compute_stats(snapshot, max_size);
-    prepend_stats(stats, &body, render_raw_stats)
-}
-
-pub fn render_raw_structure(snapshot: &Snapshot, max_size: u64) -> String {
-    let body = fmt_tree(&snapshot.tree, "");
-    let stats = compute_stats(snapshot, max_size);
-    prepend_stats(stats, &body, render_raw_stats)
+    body
 }
 
 pub fn render_structure(snapshot: &Snapshot, max_size: u64) -> String {
@@ -1068,7 +1045,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_render_outputs_stats_then_delimited_file_contents_in_order() {
+    fn raw_render_outputs_only_delimited_file_contents_in_order() {
         let root = std::env::temp_dir().join(format!("ccp-raw-test-{}", std::process::id()));
         let src_dir = root.join("src");
         let readme_path = root.join("README.md");
@@ -1089,42 +1066,15 @@ mod tests {
 
         let output = render_raw(&snapshot, 1_000);
 
-        assert!(output.starts_with("==== Project Statistics ====\n"));
-        assert!(output.contains("Files: 2\n"));
-        assert!(output.contains("Directories: 1\n"));
-        assert!(output.contains("Total lines: 2\n"));
-        assert!(output.contains("Total size: 19 bytes\n"));
-        assert!(output.contains("Estimated tokens: "));
-        assert!(output
-            .ends_with("==== README.md ====\nreadme\n\n==== src/main.rs ====\nfn main() {}\n"));
+        assert_eq!(
+            output,
+            "==== README.md ====\nreadme\n\n==== src/main.rs ====\nfn main() {}\n"
+        );
+        assert!(!output.contains("Project Statistics"));
         assert!(!output.contains("# Project Structure"));
         assert!(!output.contains("```"));
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
-    }
-
-    #[test]
-    fn raw_structure_render_outputs_plain_tree_with_stats() {
-        let mut tree = BTreeMap::new();
-        insert_entry(&mut tree, &[String::from("README.md")], false);
-        insert_entry(
-            &mut tree,
-            &[String::from("src"), String::from("main.rs")],
-            false,
-        );
-        let snapshot = Snapshot {
-            root: PathBuf::from("."),
-            tree,
-        };
-
-        let output = render_raw_structure(&snapshot, 1_000);
-
-        assert!(output.starts_with("==== Project Statistics ====\n"));
-        assert!(output.contains("├── README.md\n"));
-        assert!(output.contains("└── src/\n    └── main.rs\n"));
-        assert!(!output.contains("# Project Structure"));
-        assert!(!output.contains("```"));
-        assert!(!output.contains("==== README.md ===="));
     }
 
     #[test]

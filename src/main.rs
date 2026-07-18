@@ -2,8 +2,8 @@ use anstream::println as aprintln;
 use anyhow::{Context, Result};
 use ccp_tree::{
     create_tree, fmt_colored_tree, load_template, nodes_to_entries, parse_tree_definition,
-    render_markdown, render_raw, render_raw_structure, render_structure, render_tree_definition,
-    snapshot, GenerateOptions, Snapshot, WalkOptions,
+    render_markdown, render_raw, render_structure, render_tree_definition, snapshot,
+    GenerateOptions, Snapshot, WalkOptions,
 };
 use clap::{Parser, Subcommand};
 use std::fs;
@@ -232,9 +232,11 @@ fn main() -> Result<()> {
 }
 
 fn run_copy(cli: Cli) -> Result<()> {
+    validate_copy_options(&cli)?;
+
     let options = WalkOptions {
-        include_hidden: cli.include_hidden,
-        no_ignore: cli.no_ignore,
+        include_hidden: cli.include_hidden || cli.all,
+        no_ignore: cli.no_ignore || cli.all,
         include_useless: cli.all,
         exclude: cli.exclude,
         mktree_ignore: true,
@@ -247,9 +249,7 @@ fn run_copy(cli: Cli) -> Result<()> {
         return Ok(());
     }
 
-    let output = if cli.raw && cli.structure {
-        render_raw_structure(&scan, cli.max_size)
-    } else if cli.raw {
+    let output = if cli.raw {
         render_raw(&scan, cli.max_size)
     } else if cli.reverse {
         render_tree_definition(&scan, cli.max_size, cli.no_content)
@@ -302,10 +302,20 @@ fn run_copy(cli: Cli) -> Result<()> {
     write_output(cli.output, &output)
 }
 
+fn validate_copy_options(cli: &Cli) -> Result<()> {
+    if cli.raw && cli.structure {
+        anyhow::bail!(
+            "Options -r (raw content only) and -s (structure with statistics) cannot be used together."
+        );
+    }
+
+    Ok(())
+}
+
 fn run_reverse(command: ReverseCommand) -> Result<()> {
     let options = WalkOptions {
-        include_hidden: command.include_hidden,
-        no_ignore: command.no_ignore,
+        include_hidden: command.include_hidden || command.all,
+        no_ignore: command.no_ignore || command.all,
         include_useless: command.all,
         exclude: command.exclude,
         mktree_ignore: true,
@@ -424,20 +434,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_grouped_raw_structure_short_flags() {
+    fn raw_and_structure_together_error() {
         let cli = Cli::try_parse_from(["ccp", "-rs"]).expect("-rs should parse");
 
-        assert!(cli.raw);
-        assert!(cli.structure);
-        assert!(!cli.reverse);
+        let error = validate_copy_options(&cli).expect_err("-rs should fail validation");
+
+        assert_eq!(
+            error.to_string(),
+            "Options -r (raw content only) and -s (structure with statistics) cannot be used together."
+        );
     }
 
     #[test]
-    fn parses_structure_with_raw_long_flag() {
+    fn structure_with_raw_long_flag_errors() {
         let cli = Cli::try_parse_from(["ccp", "-s", "--raw"]).expect("-s --raw should parse");
 
-        assert!(cli.raw);
-        assert!(cli.structure);
-        assert!(!cli.reverse);
+        let error = validate_copy_options(&cli).expect_err("-s --raw should fail validation");
+
+        assert_eq!(
+            error.to_string(),
+            "Options -r (raw content only) and -s (structure with statistics) cannot be used together."
+        );
     }
 }

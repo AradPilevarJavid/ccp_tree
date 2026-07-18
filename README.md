@@ -101,7 +101,7 @@ ccp create [ROOT] [OPTIONS]        # alias for generate
 ```bash
 ccp                          # scan current directory
 ccp /path/to/project -s      # structure only
-ccp -rs                      # raw structure only (same as -s --raw)
+ccp -r                       # raw file contents only
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
@@ -208,7 +208,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `-e`, `--exclude <PAT>`     | Exclude additional glob patterns (repeatable). |
 | `--max-size <BYTES>`        | Skip files larger than this size (default: 1 MB). |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
-| `--raw`, `-r`               | Output raw file contents; combine with `-s` for raw structure. |
+| `--raw`, `-r`               | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |
 | `--no-content`              | Omit file contents in `.tree` output. |
 | `--dry-run`                 | Preview the tree (colored) without writing. |
