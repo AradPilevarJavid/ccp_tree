@@ -1,4 +1,4 @@
-# ccp — Copy Project
+# ccp
 (crate: `ccp_tree`)
 
 > 📸 Snapshot · 📋 Blueprint · 🏗️ Scaffold  
