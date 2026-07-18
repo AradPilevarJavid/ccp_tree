@@ -363,6 +363,7 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ## Roadmap(TODO)
 some of these are already partly done.
 - [x] Release on AUR
+- [ ] be able to point out a specific file to not include
 - [ ] Add project statistics (files, directories, lines, size)
 - [ ] Estimate LLM token count for generated output
 - [ ] Support XML output format
