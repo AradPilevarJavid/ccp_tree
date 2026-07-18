@@ -2,8 +2,8 @@ use anstream::println as aprintln;
 use anyhow::{Context, Result};
 use ccp_tree::{
     create_tree, fmt_colored_tree, load_template, nodes_to_entries, parse_tree_definition,
-    render_markdown, render_raw, render_structure, render_tree_definition, snapshot,
-    GenerateOptions, Snapshot, WalkOptions,
+    render_markdown, render_raw, render_raw_structure, render_structure, render_tree_definition,
+    snapshot, GenerateOptions, Snapshot, WalkOptions,
 };
 use clap::{Parser, Subcommand};
 use std::fs;
@@ -64,7 +64,7 @@ struct Cli {
     reverse: bool,
 
     /// Output raw concatenated file contents (no Markdown, no tree)
-    #[arg(long)]
+    #[arg(long, short = 'r')]
     raw: bool,
 
     /// Preview filesystem operations or scan output only
@@ -247,7 +247,9 @@ fn run_copy(cli: Cli) -> Result<()> {
         return Ok(());
     }
 
-    let output = if cli.raw {
+    let output = if cli.raw && cli.structure {
+        render_raw_structure(&scan, cli.max_size)
+    } else if cli.raw {
         render_raw(&scan, cli.max_size)
     } else if cli.reverse {
         render_tree_definition(&scan, cli.max_size, cli.no_content)
@@ -415,4 +417,27 @@ fn write_output(output_path: Option<PathBuf>, output: &str) -> Result<()> {
             .context("Failed to write to stdout")?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_grouped_raw_structure_short_flags() {
+        let cli = Cli::try_parse_from(["ccp", "-rs"]).expect("-rs should parse");
+
+        assert!(cli.raw);
+        assert!(cli.structure);
+        assert!(!cli.reverse);
+    }
+
+    #[test]
+    fn parses_structure_with_raw_long_flag() {
+        let cli = Cli::try_parse_from(["ccp", "-s", "--raw"]).expect("-s --raw should parse");
+
+        assert!(cli.raw);
+        assert!(cli.structure);
+        assert!(!cli.reverse);
+    }
 }

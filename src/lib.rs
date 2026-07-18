@@ -334,11 +334,7 @@ fn fmt_tree_entries(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
 }
 
 pub fn fmt_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
-    let mut out = fmt_tree_entries(entries, prefix);
-    let dirs = count_dirs(entries);
-    let files = collect_files(entries, Path::new("")).len();
-    out.push_str(&format!("\n{dirs} directories, {files} files\n"));
-    out
+    fmt_tree_entries(entries, prefix)
 }
 
 fn fmt_colored_tree_entries(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
@@ -366,11 +362,7 @@ fn fmt_colored_tree_entries(entries: &BTreeMap<String, Entry>, prefix: &str) -> 
 }
 
 pub fn fmt_colored_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
-    let mut out = fmt_colored_tree_entries(entries, prefix);
-    let dirs = count_dirs(entries);
-    let files = collect_files(entries, Path::new("")).len();
-    out.push_str(&format!("\n{dirs} directories, {files} files\n"));
-    out
+    fmt_colored_tree_entries(entries, prefix)
 }
 
 pub fn collect_files(entries: &BTreeMap<String, Entry>, current_path: &Path) -> Vec<PathBuf> {
@@ -585,6 +577,12 @@ pub fn render_raw(snapshot: &Snapshot, max_size: u64) -> String {
         }
     }
 
+    let stats = compute_stats(snapshot, max_size);
+    prepend_stats(stats, &body, render_raw_stats)
+}
+
+pub fn render_raw_structure(snapshot: &Snapshot, max_size: u64) -> String {
+    let body = fmt_tree(&snapshot.tree, "");
     let stats = compute_stats(snapshot, max_size);
     prepend_stats(stats, &body, render_raw_stats)
 }
@@ -984,7 +982,6 @@ mod tests {
 
         assert!(output.starts_with("# Project Statistics"));
         assert!(output.contains("# Project Structure"));
-        assert!(output.contains("1 directories, 1 files"));
         assert!(!output.contains("# File Contents"));
     }
 
@@ -1023,7 +1020,7 @@ mod tests {
     }
 
     #[test]
-    fn tree_render_appends_directory_and_file_counts_once() {
+    fn tree_render_does_not_append_directory_and_file_counts() {
         let mut tree = BTreeMap::new();
         insert_entry(&mut tree, &[String::from("README.md")], false);
         insert_entry(
@@ -1035,8 +1032,8 @@ mod tests {
         let output = fmt_tree(&tree, "");
 
         assert!(output.contains("└── src/\n    └── main.rs\n"));
-        assert!(output.ends_with("\n1 directories, 2 files\n"));
-        assert_eq!(output.matches("directories,").count(), 1);
+        assert!(!output.contains("directories,"));
+        assert!(!output.contains("files\n\n"));
     }
 
     #[test]
@@ -1064,7 +1061,6 @@ mod tests {
 
         assert!(output.starts_with("# Project Statistics"));
         assert!(output.contains("- Estimated tokens: "));
-        assert!(output.contains("0 directories, 1 files"));
         assert!(output.contains("## README.md\n\n````\nbefore\n```rust"));
         assert!(output.contains("```\nafter\n````\n"));
 
@@ -1105,6 +1101,30 @@ mod tests {
         assert!(!output.contains("```"));
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn raw_structure_render_outputs_plain_tree_with_stats() {
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("README.md")], false);
+        insert_entry(
+            &mut tree,
+            &[String::from("src"), String::from("main.rs")],
+            false,
+        );
+        let snapshot = Snapshot {
+            root: PathBuf::from("."),
+            tree,
+        };
+
+        let output = render_raw_structure(&snapshot, 1_000);
+
+        assert!(output.starts_with("==== Project Statistics ====\n"));
+        assert!(output.contains("├── README.md\n"));
+        assert!(output.contains("└── src/\n    └── main.rs\n"));
+        assert!(!output.contains("# Project Structure"));
+        assert!(!output.contains("```"));
+        assert!(!output.contains("==== README.md ===="));
     }
 
     #[test]
