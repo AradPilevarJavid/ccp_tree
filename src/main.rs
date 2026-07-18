@@ -252,7 +252,7 @@ fn run_copy(cli: Cli) -> Result<()> {
     } else if cli.reverse {
         render_tree_definition(&scan, cli.max_size, cli.no_content)
     } else if cli.structure {
-        render_structure(&scan)
+        render_structure(&scan, cli.max_size)
     } else {
         render_markdown(&scan, cli.max_size)
     };

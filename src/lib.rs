@@ -103,6 +103,15 @@ pub struct Snapshot {
 }
 
 #[derive(Debug, Clone)]
+pub struct ProjectStats {
+    pub files: usize,
+    pub dirs: usize,
+    pub lines: usize,
+    pub size: u64,
+    pub estimated_tokens: usize,
+}
+
+#[derive(Debug, Clone)]
 pub enum FileText {
     Text(String),
     Binary,
@@ -300,7 +309,7 @@ pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
     Ok(Snapshot { root, tree })
 }
 
-pub fn fmt_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
+fn fmt_tree_entries(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
     let mut out = String::new();
     let entries_vec: Vec<&Entry> = entries.values().collect();
     let count = entries_vec.len();
@@ -318,13 +327,21 @@ pub fn fmt_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
         };
         out.push_str(&format!("{}{}{}\n", prefix, connector, display_name));
         if entry.is_dir && !entry.children.is_empty() {
-            out.push_str(&fmt_tree(&entry.children, &child_prefix));
+            out.push_str(&fmt_tree_entries(&entry.children, &child_prefix));
         }
     }
     out
 }
 
-pub fn fmt_colored_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
+pub fn fmt_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
+    let mut out = fmt_tree_entries(entries, prefix);
+    let dirs = count_dirs(entries);
+    let files = collect_files(entries, Path::new("")).len();
+    out.push_str(&format!("\n{dirs} directories, {files} files\n"));
+    out
+}
+
+fn fmt_colored_tree_entries(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
     let mut out = String::new();
     let entries_vec: Vec<&Entry> = entries.values().collect();
     let count = entries_vec.len();
@@ -342,9 +359,17 @@ pub fn fmt_colored_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> Stri
         };
         out.push_str(&format!("{}{}{}\n", prefix, connector, display_name));
         if entry.is_dir && !entry.children.is_empty() {
-            out.push_str(&fmt_colored_tree(&entry.children, &child_prefix));
+            out.push_str(&fmt_colored_tree_entries(&entry.children, &child_prefix));
         }
     }
+    out
+}
+
+pub fn fmt_colored_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
+    let mut out = fmt_colored_tree_entries(entries, prefix);
+    let dirs = count_dirs(entries);
+    let files = collect_files(entries, Path::new("")).len();
+    out.push_str(&format!("\n{dirs} directories, {files} files\n"));
     out
 }
 
@@ -359,6 +384,48 @@ pub fn collect_files(entries: &BTreeMap<String, Entry>, current_path: &Path) -> 
         }
     }
     files
+}
+
+fn count_dirs(entries: &BTreeMap<String, Entry>) -> usize {
+    entries
+        .values()
+        .map(|entry| {
+            if entry.is_dir {
+                1 + count_dirs(&entry.children)
+            } else {
+                0
+            }
+        })
+        .sum()
+}
+
+pub fn compute_stats(snapshot: &Snapshot, max_size: u64) -> ProjectStats {
+    let file_paths = collect_files(&snapshot.tree, &snapshot.root);
+    let mut lines = 0;
+    let mut size = 0;
+
+    for path in &file_paths {
+        if let Ok(metadata) = fs::metadata(path) {
+            size += metadata.len();
+        }
+
+        if let Ok(FileText::Text(text)) = read_file_text(path, max_size) {
+            lines += text.lines().count();
+        }
+    }
+
+    ProjectStats {
+        files: file_paths.len(),
+        dirs: count_dirs(&snapshot.tree),
+        lines,
+        size,
+        estimated_tokens: 0,
+    }
+}
+
+/// Estimates LLM usage with the common rough heuristic of one token per four characters.
+pub fn estimate_tokens(text: &str) -> usize {
+    (text.chars().count() / 4).max(1)
 }
 
 pub fn read_file_text(path: &Path, max_size: u64) -> Result<FileText> {
@@ -395,11 +462,93 @@ fn markdown_fence_for(content: &str) -> String {
     "`".repeat(std::cmp::max(3, max_run + 1))
 }
 
+fn format_count<T: std::fmt::Display>(value: T) -> String {
+    let digits = value.to_string();
+    let mut formatted = String::new();
+    for (index, character) in digits.chars().rev().enumerate() {
+        if index > 0 && index % 3 == 0 {
+            formatted.push(',');
+        }
+        formatted.push(character);
+    }
+    formatted.chars().rev().collect()
+}
+
+fn format_size(size: u64) -> String {
+    if size < 1024 {
+        let unit = if size == 1 { "byte" } else { "bytes" };
+        return format!("{} {}", format_count(size), unit);
+    }
+
+    let units = ["KB", "MB", "GB", "TB"];
+    let mut value = size as f64;
+    let mut unit = units[0];
+    for next_unit in units {
+        value /= 1024.0;
+        unit = next_unit;
+        if value < 1024.0 {
+            break;
+        }
+    }
+
+    format!("{value:.1} {unit} ({} bytes)", format_count(size))
+}
+
+fn render_markdown_stats(stats: &ProjectStats) -> String {
+    format!(
+        "# Project Statistics\n\
+         - Files: {}\n\
+         - Directories: {}\n\
+         - Total lines: {}\n\
+         - Total size: {}\n\
+         - Estimated tokens: {}\n\n",
+        format_count(stats.files),
+        format_count(stats.dirs),
+        format_count(stats.lines),
+        format_size(stats.size),
+        format_count(stats.estimated_tokens),
+    )
+}
+
+fn render_raw_stats(stats: &ProjectStats) -> String {
+    format!(
+        "==== Project Statistics ====\n\
+         Files: {}\n\
+         Directories: {}\n\
+         Total lines: {}\n\
+         Total size: {}\n\
+         Estimated tokens: {}\n\n",
+        format_count(stats.files),
+        format_count(stats.dirs),
+        format_count(stats.lines),
+        format_size(stats.size),
+        format_count(stats.estimated_tokens),
+    )
+}
+
+fn prepend_stats<F>(mut stats: ProjectStats, body: &str, render_stats: F) -> String
+where
+    F: Fn(&ProjectStats) -> String,
+{
+    for _ in 0..10 {
+        let summary = render_stats(&stats);
+        let output = format!("{summary}{body}");
+        let estimated_tokens = estimate_tokens(&output);
+        if estimated_tokens == stats.estimated_tokens {
+            return output;
+        }
+        stats.estimated_tokens = estimated_tokens;
+    }
+
+    let summary = render_stats(&stats);
+    format!("{summary}{body}")
+}
+
 pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
     let tree_str = fmt_tree(&snapshot.tree, "");
     let tree_fence = markdown_fence_for(&tree_str);
-    let mut output = format!("# Project Structure\n\n{tree_fence}\n{tree_str}{tree_fence}\n");
-    output.push_str("\n# File Contents\n");
+    let mut body = format!("# Project Structure\n\n{tree_fence}\n{tree_str}{tree_fence}\n");
+    body.push_str("\n# File Contents\n");
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     for path in &file_paths {
         let relative = path.strip_prefix(&snapshot.root).unwrap_or(path);
@@ -408,38 +557,44 @@ pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
             Err(error) => format!("[Error reading file: {}]", error),
         };
         let fence = markdown_fence_for(&content);
-        output.push_str(&format!("\n## {}\n\n{fence}\n", relative.display()));
-        output.push_str(&content);
-        output.push_str(&format!("\n{fence}\n"));
+        body.push_str(&format!("\n## {}\n\n{fence}\n", relative.display()));
+        body.push_str(&content);
+        body.push_str(&format!("\n{fence}\n"));
     }
-    output
+
+    let stats = compute_stats(snapshot, max_size);
+    prepend_stats(stats, &body, render_markdown_stats)
 }
 
 pub fn render_raw(snapshot: &Snapshot, max_size: u64) -> String {
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
-    let mut output = String::new();
+    let mut body = String::new();
     for (index, path) in file_paths.iter().enumerate() {
         let relative = path.strip_prefix(&snapshot.root).unwrap_or(path);
         let content = match file_content(path, max_size) {
             Ok(content) => content,
             Err(error) => format!("[Error reading file: {}]", error),
         };
-        output.push_str(&format!("==== {} ====\n", relative.display()));
-        output.push_str(&content);
+        body.push_str(&format!("==== {} ====\n", relative.display()));
+        body.push_str(&content);
         if !content.ends_with('\n') {
-            output.push('\n');
+            body.push('\n');
         }
         if index + 1 < file_paths.len() {
-            output.push('\n');
+            body.push('\n');
         }
     }
-    output
+
+    let stats = compute_stats(snapshot, max_size);
+    prepend_stats(stats, &body, render_raw_stats)
 }
 
-pub fn render_structure(snapshot: &Snapshot) -> String {
+pub fn render_structure(snapshot: &Snapshot, max_size: u64) -> String {
     let tree_str = fmt_tree(&snapshot.tree, "");
     let fence = markdown_fence_for(&tree_str);
-    format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n")
+    let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
+    let stats = compute_stats(snapshot, max_size);
+    prepend_stats(stats, &body, render_markdown_stats)
 }
 
 pub fn render_tree_definition(snapshot: &Snapshot, max_size: u64, no_content: bool) -> String {
@@ -825,10 +980,63 @@ mod tests {
             tree,
         };
 
-        let output = render_structure(&snapshot);
+        let output = render_structure(&snapshot, 1_000);
 
+        assert!(output.starts_with("# Project Statistics"));
         assert!(output.contains("# Project Structure"));
+        assert!(output.contains("1 directories, 1 files"));
         assert!(!output.contains("# File Contents"));
+    }
+
+    #[test]
+    fn compute_stats_counts_files_directories_text_lines_and_size() {
+        let root = std::env::temp_dir().join(format!("ccp-stats-test-{}", std::process::id()));
+        let src_dir = root.join("src");
+        let readme_path = root.join("README.md");
+        let main_path = src_dir.join("main.rs");
+        let image_path = root.join("image.bin");
+
+        fs::create_dir_all(&src_dir).expect("test src dir should be created");
+        fs::write(&readme_path, "one\ntwo\n").expect("readme should be written");
+        fs::write(&main_path, "fn main() {}").expect("main should be written");
+        fs::write(&image_path, [0, 159, 146, 150]).expect("binary should be written");
+
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("README.md")], false);
+        insert_entry(&mut tree, &[String::from("image.bin")], false);
+        insert_entry(
+            &mut tree,
+            &[String::from("src"), String::from("main.rs")],
+            false,
+        );
+        let snapshot = Snapshot { root, tree };
+
+        let stats = compute_stats(&snapshot, 1_000);
+
+        assert_eq!(stats.files, 3);
+        assert_eq!(stats.dirs, 1);
+        assert_eq!(stats.lines, 3);
+        assert_eq!(stats.size, 24);
+        assert_eq!(stats.estimated_tokens, 0);
+
+        fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn tree_render_appends_directory_and_file_counts_once() {
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("README.md")], false);
+        insert_entry(
+            &mut tree,
+            &[String::from("src"), String::from("main.rs")],
+            false,
+        );
+
+        let output = fmt_tree(&tree, "");
+
+        assert!(output.contains("└── src/\n    └── main.rs\n"));
+        assert!(output.ends_with("\n1 directories, 2 files\n"));
+        assert_eq!(output.matches("directories,").count(), 1);
     }
 
     #[test]
@@ -854,6 +1062,9 @@ mod tests {
 
         let output = render_markdown(&snapshot, 1_000);
 
+        assert!(output.starts_with("# Project Statistics"));
+        assert!(output.contains("- Estimated tokens: "));
+        assert!(output.contains("0 directories, 1 files"));
         assert!(output.contains("## README.md\n\n````\nbefore\n```rust"));
         assert!(output.contains("```\nafter\n````\n"));
 
@@ -861,7 +1072,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_render_outputs_only_delimited_file_contents_in_order() {
+    fn raw_render_outputs_stats_then_delimited_file_contents_in_order() {
         let root = std::env::temp_dir().join(format!("ccp-raw-test-{}", std::process::id()));
         let src_dir = root.join("src");
         let readme_path = root.join("README.md");
@@ -882,12 +1093,38 @@ mod tests {
 
         let output = render_raw(&snapshot, 1_000);
 
-        assert_eq!(
-            output,
-            "==== README.md ====\nreadme\n\n==== src/main.rs ====\nfn main() {}\n"
-        );
+        assert!(output.starts_with("==== Project Statistics ====\n"));
+        assert!(output.contains("Files: 2\n"));
+        assert!(output.contains("Directories: 1\n"));
+        assert!(output.contains("Total lines: 2\n"));
+        assert!(output.contains("Total size: 19 bytes\n"));
+        assert!(output.contains("Estimated tokens: "));
+        assert!(output
+            .ends_with("==== README.md ====\nreadme\n\n==== src/main.rs ====\nfn main() {}\n"));
         assert!(!output.contains("# Project Structure"));
         assert!(!output.contains("```"));
+
+        fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn tree_definition_render_does_not_include_project_statistics() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-tree-definition-test-{}", std::process::id()));
+        let readme_path = root.join("README.md");
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&readme_path, "readme").expect("readme should be written");
+
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("README.md")], false);
+        let snapshot = Snapshot { root, tree };
+
+        let output = render_tree_definition(&snapshot, 1_000, false);
+
+        assert_eq!(output, "README.md: readme\n");
+        assert!(!output.contains("Project Statistics"));
+        assert!(!output.contains("Estimated tokens"));
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
     }
