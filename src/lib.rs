@@ -339,6 +339,26 @@ pub fn fmt_tree(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
     fmt_tree_entries(entries, prefix)
 }
 
+fn root_display_name(root: &Path) -> String {
+    root.file_name()
+        .filter(|name| !name.is_empty() && *name != "." && *name != "..")
+        .map(|name| name.to_string_lossy().into_owned())
+        .or_else(|| {
+            std::env::current_dir().ok().and_then(|current_dir| {
+                current_dir
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+            })
+        })
+        .unwrap_or_else(|| root.display().to_string())
+}
+
+fn fmt_tree_with_root(root: &Path, entries: &BTreeMap<String, Entry>) -> String {
+    let mut output = format!("{}/\n", root_display_name(root));
+    output.push_str(&fmt_tree(entries, ""));
+    output
+}
+
 fn fmt_colored_tree_entries(entries: &BTreeMap<String, Entry>, prefix: &str) -> String {
     let mut out = String::new();
     let entries_vec: Vec<&Entry> = entries.values().collect();
@@ -523,7 +543,7 @@ where
 }
 
 pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
-    let tree_str = fmt_tree(&snapshot.tree, "");
+    let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let tree_fence = markdown_fence_for(&tree_str);
     let mut body = format!("# Project Structure\n\n{tree_fence}\n{tree_str}{tree_fence}\n");
     body.push_str("\n# File Contents\n");
@@ -567,7 +587,7 @@ pub fn render_raw(snapshot: &Snapshot, max_size: u64) -> String {
 }
 
 pub fn render_structure(snapshot: &Snapshot, max_size: u64) -> String {
-    let tree_str = fmt_tree(&snapshot.tree, "");
+    let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let fence = markdown_fence_for(&tree_str);
     let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
     let stats = compute_stats(snapshot, max_size);
@@ -953,7 +973,7 @@ mod tests {
             false,
         );
         let snapshot = Snapshot {
-            root: PathBuf::from("."),
+            root: PathBuf::from("example-project"),
             tree,
         };
 
@@ -961,6 +981,7 @@ mod tests {
 
         assert!(output.starts_with("# Project Statistics"));
         assert!(output.contains("# Project Structure"));
+        assert!(output.contains("example-project/\n"));
         assert!(!output.contains("# File Contents"));
     }
 
