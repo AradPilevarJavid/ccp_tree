@@ -385,7 +385,7 @@ some of these are already partly done.
 - [ ] Add summary section to snapshots (statistics + token count)
 - [ ] Improve binary file handling with MIME-type detection
 - [ ] Add more built‑in templates (Rust, React, Go)
-- [ ] Handel files that are too lard (more than 1048576 bytes)
+- [ ] Handel files that are too larg (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
 - [ ] Have the name of the project directory when printing the structure (minor change)
 - [ ] handel files like gifs
