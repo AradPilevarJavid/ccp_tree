@@ -371,6 +371,7 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ## Roadmap(TODO)
 some of these are already partly done.
 - [x] Release on AUR
+- [ ] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
 - [ ] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
 - [ ] generate a manual page.(Or a more complete help)
 - [ ] be able to point out a specific file to not include
