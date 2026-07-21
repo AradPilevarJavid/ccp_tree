@@ -215,6 +215,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `-a`, `--all`               | Include default‑excluded directories (target, node_modules, …). |
 | `-e`, `--exclude <PAT>`     | Exclude additional glob patterns (repeatable). |
 | `--max-size <BYTES>`        | Skip files larger than this size (default: 1 MB). |
+| `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
 | `--raw`, `-r`               | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |
@@ -251,6 +252,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `-a`, `--all`                | Include default‑excluded directories (like `target`, `node_modules`). |
 | `-e`, `--exclude <PAT>`      | Exclude additional glob patterns (repeatable). |
 | `--max-size <BYTES>`         | Skip files larger than this size (default: 1 MB). |
+| `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
 | `--no-content`               | Omit file contents in the `.tree` output. |
 | `--dry-run`                  | Preview the tree (colored) without writing. |
 | `--verbose`, `-v`            | Print extra progress info. |
