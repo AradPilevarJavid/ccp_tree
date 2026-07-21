@@ -80,13 +80,13 @@ fn run_copy(cli: Cli) -> Result<()> {
     }
 
     let output = if cli.raw {
-        render_raw(&scan, cli.max_size)
+        render_raw(&scan, cli.max_size, cli.max_chars)
     } else if cli.reverse {
-        render_tree_definition(&scan, cli.max_size, cli.no_content)
+        render_tree_definition(&scan, cli.max_size, cli.no_content, cli.max_chars)
     } else if cli.structure {
-        render_structure(&scan, cli.max_size)
+        render_structure(&scan, cli.max_size, cli.max_chars)
     } else {
-        render_markdown(&scan, cli.max_size)
+        render_markdown(&scan, cli.max_size, cli.max_chars)
     };
 
     #[cfg(feature = "clipboard")]
@@ -160,7 +160,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         eprintln!("Scanned {}", command.root.display());
     }
 
-    let output = render_tree_definition(&scan, command.max_size, command.no_content);
+    let output = render_tree_definition(&scan, command.max_size, command.no_content, command.max_chars);
 
     #[cfg(feature = "clipboard")]
     if command.clipboard {

@@ -413,7 +413,7 @@ fn count_dirs(entries: &BTreeMap<String, Entry>) -> usize {
         .sum()
 }
 
-pub fn compute_stats(snapshot: &Snapshot, max_size: u64) -> ProjectStats {
+pub fn compute_stats(snapshot: &Snapshot, max_size: u64, max_chars: Option<u64>) -> ProjectStats {
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     let mut lines = 0;
     let mut size = 0;
@@ -423,7 +423,7 @@ pub fn compute_stats(snapshot: &Snapshot, max_size: u64) -> ProjectStats {
             size += metadata.len();
         }
 
-        if let Ok(FileText::Text(text)) = read_file_text(path, max_size) {
+        if let Ok(FileText::Text(text)) = read_file_text(path, max_size, max_chars) {
             lines += text.lines().count();
         }
     }
@@ -442,20 +442,32 @@ pub fn estimate_tokens(text: &str) -> usize {
     (text.chars().count() / 4).max(1)
 }
 
-pub fn read_file_text(path: &Path, max_size: u64) -> Result<FileText> {
+pub fn read_file_text(path: &Path, max_size: u64, max_chars: Option<u64>) -> Result<FileText> {
     let metadata = fs::metadata(path)?;
     if metadata.len() > max_size {
         return Ok(FileText::TooLarge(max_size));
     }
     let bytes = fs::read(path)?;
     match String::from_utf8(bytes) {
-        Ok(text) => Ok(FileText::Text(text)),
+        Ok(text) => {
+            if let Some(limit) = max_chars {
+                let char_count = text.chars().count();
+                if char_count > limit as usize {
+                    let truncated: String = text.chars().take(limit as usize).collect();
+                    return Ok(FileText::Text(format!(
+                        "{}\n[truncated after {} characters]",
+                        truncated, limit
+                    )));
+                }
+            }
+            Ok(FileText::Text(text))
+        }
         Err(_) => Ok(FileText::Binary),
     }
 }
 
-pub fn file_content(path: &Path, max_size: u64) -> Result<String> {
-    match read_file_text(path, max_size)? {
+pub fn file_content(path: &Path, max_size: u64, max_chars: Option<u64>) -> Result<String> {
+    match read_file_text(path, max_size, max_chars)? {
         FileText::Text(text) => Ok(text),
         FileText::Binary => Ok("[Binary file not shown]".to_string()),
         FileText::TooLarge(size) => Ok(format!("[File too large, > {} bytes]", size)),
@@ -542,7 +554,7 @@ where
     format!("{summary}{body}")
 }
 
-pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
+pub fn render_markdown(snapshot: &Snapshot, max_size: u64, max_chars: Option<u64>) -> String {
     let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let tree_fence = markdown_fence_for(&tree_str);
     let mut body = format!("# Project Structure\n\n{tree_fence}\n{tree_str}{tree_fence}\n");
@@ -550,7 +562,7 @@ pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     for path in &file_paths {
         let relative = path.strip_prefix(&snapshot.root).unwrap_or(path);
-        let content = match file_content(path, max_size) {
+        let content = match file_content(path, max_size, max_chars) {
             Ok(content) => content,
             Err(error) => format!("[Error reading file: {}]", error),
         };
@@ -560,16 +572,16 @@ pub fn render_markdown(snapshot: &Snapshot, max_size: u64) -> String {
         body.push_str(&format!("\n{fence}\n"));
     }
 
-    let stats = compute_stats(snapshot, max_size);
+    let stats = compute_stats(snapshot, max_size, max_chars);
     prepend_stats(stats, &body, render_markdown_stats)
 }
 
-pub fn render_raw(snapshot: &Snapshot, max_size: u64) -> String {
+pub fn render_raw(snapshot: &Snapshot, max_size: u64, max_chars: Option<u64>) -> String {
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     let mut body = String::new();
     for (index, path) in file_paths.iter().enumerate() {
         let relative = path.strip_prefix(&snapshot.root).unwrap_or(path);
-        let content = match file_content(path, max_size) {
+        let content = match file_content(path, max_size, max_chars) {
             Ok(content) => content,
             Err(error) => format!("[Error reading file: {}]", error),
         };
@@ -586,16 +598,16 @@ pub fn render_raw(snapshot: &Snapshot, max_size: u64) -> String {
     body
 }
 
-pub fn render_structure(snapshot: &Snapshot, max_size: u64) -> String {
+pub fn render_structure(snapshot: &Snapshot, max_size: u64, max_chars: Option<u64>) -> String {
     let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let fence = markdown_fence_for(&tree_str);
     let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
-    let stats = compute_stats(snapshot, max_size);
+    let stats = compute_stats(snapshot, max_size, max_chars);
     prepend_stats(stats, &body, render_markdown_stats)
 }
 
-pub fn render_tree_definition(snapshot: &Snapshot, max_size: u64, no_content: bool) -> String {
-    render_tree_definition_entries(&snapshot.tree, &snapshot.root, 0, max_size, no_content)
+pub fn render_tree_definition(snapshot: &Snapshot, max_size: u64, no_content: bool, max_chars: Option<u64>) -> String {
+    render_tree_definition_entries(&snapshot.tree, &snapshot.root, 0, max_size, no_content, max_chars)
 }
 
 fn render_tree_definition_entries(
@@ -604,6 +616,7 @@ fn render_tree_definition_entries(
     depth: usize,
     max_size: u64,
     no_content: bool,
+    max_chars: Option<u64>,
 ) -> String {
     let mut out = String::new();
     let indent = "  ".repeat(depth);
@@ -617,6 +630,7 @@ fn render_tree_definition_entries(
                 depth + 1,
                 max_size,
                 no_content,
+                max_chars,
             ));
             continue;
         }
@@ -626,7 +640,7 @@ fn render_tree_definition_entries(
             continue;
         }
 
-        match read_file_text(&child_path, max_size) {
+        match read_file_text(&child_path, max_size, max_chars) {
             Ok(FileText::Text(text)) if text.is_empty() => {
                 out.push_str(&format!("{}{}\n", indent, entry.name))
             }

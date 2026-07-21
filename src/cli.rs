@@ -42,6 +42,10 @@ pub struct Cli {
     #[arg(long, default_value = "1048576")]
     pub max_size: u64,
 
+    /// Limit the number of characters read from each file (for AI context windows)
+    #[arg(long)]
+    pub max_chars: Option<u64>,
+
     /// Omit file contents from reverse .tree output
     #[arg(long)]
     pub no_content: bool,
@@ -154,6 +158,10 @@ pub struct ReverseCommand {
     /// Maximum file size in bytes
     #[arg(long, default_value = "1048576")]
     pub max_size: u64,
+
+    /// Limit the number of characters read from each file (for AI context windows)
+    #[arg(long)]
+    pub max_chars: Option<u64>,
 
     /// Omit file contents
     #[arg(long)]
