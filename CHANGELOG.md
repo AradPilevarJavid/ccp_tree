@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added `-t` / `--tokens` to snapshot and reverse modes to print the estimated token count and exit.
 - Added `--head <LINES>` and `--tail <LINES>` to limit file contents by line count.
 - Changed `-r` into a reverse-direction modifier so `-cr --max-chars <CHARS>` copies content from the end of each file.
 - Kept raw output available through `--raw`.

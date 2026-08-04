@@ -2,10 +2,10 @@ use anstream::println as aprintln;
 use anyhow::{Context, Result};
 use ccp_tree::{
     cli::{Cli, Command, GenerateCommand, ReverseCommand},
-    create_tree, fmt_colored_tree, load_template, nodes_to_entries, parse_tree_definition,
-    render_markdown_with_options, render_raw_with_options, render_structure_with_options,
-    render_tree_definition_with_options, snapshot, ContentOptions, GenerateOptions, Snapshot,
-    WalkOptions,
+    create_tree, estimate_tokens, fmt_colored_tree, load_template, nodes_to_entries,
+    parse_tree_definition, render_markdown_with_options, render_raw_with_options,
+    render_structure_with_options, render_tree_definition_with_options, snapshot, ContentOptions,
+    GenerateOptions, Snapshot, WalkOptions,
 };
 use clap::Parser;
 use std::fs;
@@ -37,7 +37,7 @@ fn run_copy(cli: Cli) -> Result<()> {
     };
     let scan = snapshot(&cli.root, &options)?;
 
-    if cli.dry_run {
+    if cli.dry_run && !cli.tokens {
         aprintln!("{}", fmt_colored_tree(&scan.tree, ""));
         return Ok(());
     }
@@ -57,6 +57,11 @@ fn run_copy(cli: Cli) -> Result<()> {
     } else {
         render_markdown_with_options(&scan, cli.max_size, &content_options)
     };
+
+    if cli.tokens {
+        println!("Estimated tokens: {}", estimate_tokens(&output));
+        return Ok(());
+    }
 
     #[cfg(feature = "clipboard")]
     if cli.clipboard {
@@ -120,10 +125,10 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
     };
 
     let scan = snapshot(&command.root, &options)?;
-    if command.dry_run && !command.quiet {
+    if command.dry_run && !command.quiet && !command.tokens {
         aprintln!("{}", fmt_colored_tree(&scan.tree, ""));
     }
-    if command.verbose && !command.quiet {
+    if command.verbose && !command.quiet && !command.tokens {
         eprintln!("Scanned {}", command.root.display());
     }
 
@@ -139,6 +144,11 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         command.no_content,
         &content_options,
     );
+
+    if command.tokens {
+        println!("Estimated tokens: {}", estimate_tokens(&output));
+        return Ok(());
+    }
 
     #[cfg(feature = "clipboard")]
     if command.clipboard {
@@ -289,5 +299,23 @@ mod tests {
         let result = Cli::try_parse_from(["ccp", "-r"]);
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn tokens_short_flag_parses_for_snapshot() {
+        let cli = Cli::try_parse_from(["ccp", "-t"]).expect("-t should parse");
+
+        assert!(cli.tokens);
+    }
+
+    #[test]
+    fn tokens_long_flag_parses_for_reverse_subcommand() {
+        let cli =
+            Cli::try_parse_from(["ccp", "reverse", "--tokens"]).expect("--tokens should parse");
+
+        let Some(Command::Reverse(command)) = cli.command else {
+            panic!("reverse command should parse");
+        };
+        assert!(command.tokens);
     }
 }

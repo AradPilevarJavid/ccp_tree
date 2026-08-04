@@ -113,6 +113,7 @@ ccp --raw                    # raw file contents only
 ccp --head 100               # first 100 lines from each file
 ccp --tail 100               # last 100 lines from each file
 ccp -cr --max-chars 4000     # copy the last 4,000 characters from each file
+ccp -t                       # print the estimated token count and exit
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
@@ -222,6 +223,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--head <LINES>`            | Include only the first number of lines from each file. |
 | `--tail <LINES>`            | Include only the last number of lines from each file. |
 | `-r`                        | Apply `--max-chars` from the end of each file. |
+| `-t`, `--tokens`            | Print the estimated token count for the selected output and exit. |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
 | `--raw`                     | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |

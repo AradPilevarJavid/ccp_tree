@@ -58,6 +58,10 @@ pub struct Cli {
     #[arg(short = 'r', requires = "max_chars")]
     pub from_end: bool,
 
+    /// Print the estimated token count and exit
+    #[arg(short = 't', long = "tokens")]
+    pub tokens: bool,
+
     /// Omit file contents from reverse .tree output
     #[arg(long)]
     pub no_content: bool,
@@ -186,6 +190,10 @@ pub struct ReverseCommand {
     /// Apply character limits from the end of each file
     #[arg(short = 'r', requires = "max_chars")]
     pub from_end: bool,
+
+    /// Print the estimated token count and exit
+    #[arg(short = 't', long = "tokens")]
+    pub tokens: bool,
 
     /// Omit file contents
     #[arg(long)]
