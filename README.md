@@ -109,7 +109,10 @@ ccp create [ROOT] [OPTIONS]        # alias for generate
 ```bash
 ccp                          # scan current directory
 ccp /path/to/project -s      # structure only
-ccp -r                       # raw file contents only
+ccp --raw                    # raw file contents only
+ccp --head 100               # first 100 lines from each file
+ccp --tail 100               # last 100 lines from each file
+ccp -cr --max-chars 4000     # copy the last 4,000 characters from each file
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
@@ -215,9 +218,12 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `-a`, `--all`               | Include default‑excluded directories (target, node_modules, …). |
 | `-e`, `--exclude <PAT>`     | Exclude additional glob patterns (repeatable). |
 | `--max-size <BYTES>`        | Skip files larger than this size (default: 1 MB). |
-| `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
+| `--max-chars <CHARS>`       | Limit the number of characters read from each file (for AI context windows). |
+| `--head <LINES>`            | Include only the first number of lines from each file. |
+| `--tail <LINES>`            | Include only the last number of lines from each file. |
+| `-r`                        | Apply `--max-chars` from the end of each file. |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
-| `--raw`, `-r`               | Output raw file contents only; cannot be combined with `-s`. |
+| `--raw`                     | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |
 | `--no-content`              | Omit file contents in `.tree` output. |
 | `--dry-run`                 | Preview the tree (colored) without writing. |

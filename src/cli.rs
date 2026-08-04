@@ -46,6 +46,18 @@ pub struct Cli {
     #[arg(long)]
     pub max_chars: Option<u64>,
 
+    /// Include only the first number of lines from each file
+    #[arg(long, conflicts_with = "tail")]
+    pub head: Option<usize>,
+
+    /// Include only the last number of lines from each file
+    #[arg(long, conflicts_with = "head")]
+    pub tail: Option<usize>,
+
+    /// Apply character limits from the end of each file
+    #[arg(short = 'r', requires = "max_chars")]
+    pub from_end: bool,
+
     /// Omit file contents from reverse .tree output
     #[arg(long)]
     pub no_content: bool,
@@ -59,7 +71,7 @@ pub struct Cli {
     pub reverse: bool,
 
     /// Output raw concatenated file contents (no Markdown, no tree)
-    #[arg(long, short = 'r')]
+    #[arg(long)]
     pub raw: bool,
 
     /// Preview filesystem operations or scan output only
@@ -162,6 +174,18 @@ pub struct ReverseCommand {
     /// Limit the number of characters read from each file (for AI context windows)
     #[arg(long)]
     pub max_chars: Option<u64>,
+
+    /// Include only the first number of lines from each file
+    #[arg(long, conflicts_with = "tail")]
+    pub head: Option<usize>,
+
+    /// Include only the last number of lines from each file
+    #[arg(long, conflicts_with = "head")]
+    pub tail: Option<usize>,
+
+    /// Apply character limits from the end of each file
+    #[arg(short = 'r', requires = "max_chars")]
+    pub from_end: bool,
 
     /// Omit file contents
     #[arg(long)]

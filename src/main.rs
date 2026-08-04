@@ -3,8 +3,9 @@ use anyhow::{Context, Result};
 use ccp_tree::{
     cli::{Cli, Command, GenerateCommand, ReverseCommand},
     create_tree, fmt_colored_tree, load_template, nodes_to_entries, parse_tree_definition,
-    render_markdown, render_raw, render_structure, render_tree_definition, snapshot,
-    GenerateOptions, Snapshot, WalkOptions,
+    render_markdown_with_options, render_raw_with_options, render_structure_with_options,
+    render_tree_definition_with_options, snapshot, ContentOptions, GenerateOptions, Snapshot,
+    WalkOptions,
 };
 use clap::Parser;
 use std::fs;
@@ -12,45 +13,7 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "clipboard")]
-fn set_clipboard(text: &str) -> Result<()> {
-    use std::io::Write;
-
-    // On Linux, try wl-copy (Wayland) and xclip (X11) first.
-    // These force the active selection, bypassing KDE's clipboard history.
-    if cfg!(target_os = "linux") {
-        if let Ok(mut child) = std::process::Command::new("wl-copy")
-            .stdin(std::process::Stdio::piped())
-            .spawn()
-        {
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin.write_all(text.as_bytes())?;
-            }
-            let status = child.wait()?;
-            if status.success() {
-                return Ok(());
-            }
-        }
-        if let Ok(mut child) = std::process::Command::new("xclip")
-            .args(["-selection", "clipboard", "-i"])
-            .stdin(std::process::Stdio::piped())
-            .spawn()
-        {
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin.write_all(text.as_bytes())?;
-            }
-            let status = child.wait()?;
-            if status.success() {
-                return Ok(());
-            }
-        }
-    }
-    // Fallback to arboard for non-Linux or if neither tool is installed
-    let mut clipboard = arboard::Clipboard::new().context("Failed to access clipboard")?;
-    clipboard
-        .set_text(text)
-        .context("Failed to set clipboard")?;
-    Ok(())
-}
+use ccp_tree::set_clipboard;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -79,14 +42,20 @@ fn run_copy(cli: Cli) -> Result<()> {
         return Ok(());
     }
 
+    let content_options = ContentOptions {
+        max_chars: cli.max_chars,
+        head: cli.head,
+        tail: cli.tail,
+        from_end: cli.from_end,
+    };
     let output = if cli.raw {
-        render_raw(&scan, cli.max_size, cli.max_chars)
+        render_raw_with_options(&scan, cli.max_size, &content_options)
     } else if cli.reverse {
-        render_tree_definition(&scan, cli.max_size, cli.no_content, cli.max_chars)
+        render_tree_definition_with_options(&scan, cli.max_size, cli.no_content, &content_options)
     } else if cli.structure {
-        render_structure(&scan, cli.max_size, cli.max_chars)
+        render_structure_with_options(&scan, cli.max_size, &content_options)
     } else {
-        render_markdown(&scan, cli.max_size, cli.max_chars)
+        render_markdown_with_options(&scan, cli.max_size, &content_options)
     };
 
     #[cfg(feature = "clipboard")]
@@ -134,9 +103,7 @@ fn run_copy(cli: Cli) -> Result<()> {
 
 fn validate_copy_options(cli: &Cli) -> Result<()> {
     if cli.raw && cli.structure {
-        anyhow::bail!(
-            "Options -r (raw content only) and -s (structure with statistics) cannot be used together."
-        );
+        anyhow::bail!("Options --raw and -s (structure with statistics) cannot be used together.");
     }
 
     Ok(())
@@ -160,7 +127,18 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         eprintln!("Scanned {}", command.root.display());
     }
 
-    let output = render_tree_definition(&scan, command.max_size, command.no_content, command.max_chars);
+    let content_options = ContentOptions {
+        max_chars: command.max_chars,
+        head: command.head,
+        tail: command.tail,
+        from_end: command.from_end,
+    };
+    let output = render_tree_definition_with_options(
+        &scan,
+        command.max_size,
+        command.no_content,
+        &content_options,
+    );
 
     #[cfg(feature = "clipboard")]
     if command.clipboard {
@@ -265,13 +243,13 @@ mod tests {
 
     #[test]
     fn raw_and_structure_together_error() {
-        let cli = Cli::try_parse_from(["ccp", "-rs"]).expect("-rs should parse");
+        let cli = Cli::try_parse_from(["ccp", "--raw", "-s"]).expect("--raw -s should parse");
 
-        let error = validate_copy_options(&cli).expect_err("-rs should fail validation");
+        let error = validate_copy_options(&cli).expect_err("--raw -s should fail validation");
 
         assert_eq!(
             error.to_string(),
-            "Options -r (raw content only) and -s (structure with statistics) cannot be used together."
+            "Options --raw and -s (structure with statistics) cannot be used together."
         );
     }
 
@@ -283,7 +261,33 @@ mod tests {
 
         assert_eq!(
             error.to_string(),
-            "Options -r (raw content only) and -s (structure with statistics) cannot be used together."
+            "Options --raw and -s (structure with statistics) cannot be used together."
         );
+    }
+
+    #[cfg(feature = "clipboard")]
+    #[test]
+    fn clipboard_and_reverse_direction_short_flags_combine() {
+        let cli =
+            Cli::try_parse_from(["ccp", "-cr", "--max-chars", "120"]).expect("-cr should parse");
+
+        assert!(cli.clipboard);
+        assert!(cli.from_end);
+        assert_eq!(cli.max_chars, Some(120));
+        assert!(!cli.raw);
+    }
+
+    #[test]
+    fn head_and_tail_conflict() {
+        let result = Cli::try_parse_from(["ccp", "--head", "10", "--tail", "10"]);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn reverse_direction_requires_max_chars() {
+        let result = Cli::try_parse_from(["ccp", "-r"]);
+
+        assert!(result.is_err());
     }
 }

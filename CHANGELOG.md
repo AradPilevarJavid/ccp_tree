@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Added `--head <LINES>` and `--tail <LINES>` to limit file contents by line count.
+- Changed `-r` into a reverse-direction modifier so `-cr --max-chars <CHARS>` copies content from the end of each file.
+- Kept raw output available through `--raw`.
+
 ## [0.1.5]
 
 ### Changed
