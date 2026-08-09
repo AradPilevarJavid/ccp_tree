@@ -375,7 +375,7 @@ some of these are already partly done.
 - [x] Release on AUR
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [x] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
-- [ ] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
+- [x] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
 - [ ] generate a manual page.(Or a more complete help)
 - [x] be able to point out a specific file to not include
 - [x] Add project statistics (files, directories, lines, size)
