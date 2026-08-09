@@ -109,11 +109,7 @@ ccp create [ROOT] [OPTIONS]        # alias for generate
 ```bash
 ccp                          # scan current directory
 ccp /path/to/project -s      # structure only
-ccp --raw                    # raw file contents only
-ccp --head 100               # first 100 lines from each file
-ccp --tail 100               # last 100 lines from each file
-ccp -cr --max-chars 4000     # copy the last 4,000 characters from each file
-ccp -t                       # count o200k_base tokens and exit
+ccp -r                       # raw file contents only
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
@@ -219,13 +215,9 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `-a`, `--all`               | Include default‑excluded directories (target, node_modules, …). |
 | `-e`, `--exclude <PAT>`     | Exclude additional glob patterns (repeatable). |
 | `--max-size <BYTES>`        | Skip files larger than this size (default: 1 MB). |
-| `--max-chars <CHARS>`       | Limit the number of characters read from each file (for AI context windows). |
-| `--head <LINES>`            | Include only the first number of lines from each file. |
-| `--tail <LINES>`            | Include only the last number of lines from each file. |
-| `-r`                        | Apply `--max-chars` from the end of each file. |
-| `-t`, `--tokens`            | Count `o200k_base` tokens for the selected output and exit. |
+| `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
-| `--raw`                     | Output raw file contents only; cannot be combined with `-s`. |
+| `--raw`, `-r`               | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |
 | `--no-content`              | Omit file contents in `.tree` output. |
 | `--dry-run`                 | Preview the tree (colored) without writing. |
@@ -233,8 +225,6 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--quiet`, `-q`             | Suppress non‑essential output. |
 | `-o`, `--output <FILE>`     | Write output to a file instead of stdout. |
 | `-c`, `--clipboard`         | Copy output to clipboard (requires the `clipboard` feature). |
-
-Token counts use the `o200k_base` BPE encoding used by modern OpenAI models. Counts are exact for that encoding, but may differ for models that use another tokenizer and do not include chat-message wrapper overhead.
 
 ### `ccp generate` / `ccp create` options
 ### if you run ccp create --help you will see:
@@ -383,7 +373,6 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ## Roadmap(TODO)
 some of these are already partly done.
 - [x] Release on AUR
-<<<<<<< HEAD
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [x] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
 - [x] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
@@ -391,14 +380,6 @@ some of these are already partly done.
 - [x] be able to point out a specific file to not include
 - [x] Add project statistics (files, directories, lines, size)
 - [x] Estimate LLM token count for generated output
-=======
-- [ ] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
-- [x] Implement complete `o200k_base` BPE tokenization instead of the 4-characters-per-token heuristic.
-- [ ] generate a manual page.(Or a more complete help)
-- [ ] be able to point out a specific file to not include
-- [ ] Add project statistics (files, directories, lines, size)
-- [x] Count generated-output tokens with `o200k_base`
->>>>>>> 0fb55da (Implemented a complete tokenizer/pros:tokenizer cons:the tool became a little slower)
 - [ ] Support XML output format
 - [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
 - [ ] Detect and warn about potential secrets before exporting
@@ -425,3 +406,4 @@ Copyright (c) 2026 Arad Pilevar Javid.
 Feedback, issues, and pull requests are welcome!  
 Make sure to run `cargo test` before submitting.  
 If you want to add a new built‑in template, drop a `.tree` file into the `templates/` directory – the build script picks it up automatically.
+

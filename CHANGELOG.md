@@ -4,6 +4,8 @@
 
 - Added `-t` / `--tokens` to snapshot and reverse modes to count `o200k_base` BPE tokens and exit.
 - Replaced the four-characters-per-token heuristic with complete `o200k_base` tokenization.
+- Added MIME detection and size metadata for binary and oversized files.
+- Added branch, commit hash, and remote URL metadata to Markdown snapshots of Git repositories.
 - Added `--head <LINES>` and `--tail <LINES>` to limit file contents by line count.
 - Changed `-r` into a reverse-direction modifier so `-cr --max-chars <CHARS>` copies content from the end of each file.
 - Kept raw output available through `--raw`.

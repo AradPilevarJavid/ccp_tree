@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod exclude;
 pub mod file;
+pub mod git;
 pub mod parser;
 pub mod render;
 pub mod scaffold;
@@ -18,9 +19,11 @@ pub use exclude::{
     should_exclude, ExcludePattern, DEFAULT_EXCLUDES,
 };
 pub use file::{
-    file_content, file_content_with_options, read_file_text, read_file_text_with_options,
-    ContentOptions, FileText,
+    file_content, file_content_with_options, inspect_file, inspect_file_with_options,
+    read_file_text, read_file_text_with_options, ContentOptions, FileMetadata, FileText,
+    InspectedFile, MimeDetection,
 };
+pub use git::{detect_git_metadata, GitMetadata};
 pub use parser::{nodes_to_entries, parse_tree_definition, TreeNode};
 pub use render::{
     fmt_colored_tree, render_markdown, render_markdown_with_options, render_raw,

@@ -1,23 +1,37 @@
 use crate::file::{file_content_with_options, markdown_fence_for, ContentOptions};
+use crate::git::{detect_git_metadata, GitMetadata};
 use crate::stats::{
     compute_stats_with_options, estimate_tokens, format_count, format_size, ProjectStats,
 };
 use crate::tree::{collect_files, fmt_tree_with_root, Snapshot};
 
-fn render_markdown_stats(stats: &ProjectStats) -> String {
-    format!(
+fn render_markdown_stats(stats: &ProjectStats, git_metadata: Option<&GitMetadata>) -> String {
+    let mut output = format!(
         "# Project Statistics\n\
          - Files: {}\n\
          - Directories: {}\n\
          - Total lines: {}\n\
          - Total size: {}\n\
-         - Tokens (o200k_base): {}\n\n",
+         - Tokens (o200k_base): {}\n",
         format_count(stats.files),
         format_count(stats.dirs),
         format_count(stats.lines),
         format_size(stats.size),
         format_count(stats.estimated_tokens),
-    )
+    );
+    if let Some(metadata) = git_metadata {
+        if let Some(branch) = &metadata.branch {
+            output.push_str(&format!("- Git branch: {branch}\n"));
+        }
+        if let Some(commit_hash) = &metadata.commit_hash {
+            output.push_str(&format!("- Git commit: {commit_hash}\n"));
+        }
+        if let Some(remote_url) = &metadata.remote_url {
+            output.push_str(&format!("- Git remote: {remote_url}\n"));
+        }
+    }
+    output.push('\n');
+    output
 }
 
 fn prepend_stats<F>(mut stats: ProjectStats, body: &str, render_stats: F) -> String
@@ -72,7 +86,10 @@ pub fn render_markdown_with_options(
     }
 
     let stats = compute_stats_with_options(snapshot, max_size, options);
-    prepend_stats(stats, &body, render_markdown_stats)
+    let git_metadata = detect_git_metadata(&snapshot.root);
+    prepend_stats(stats, &body, |stats| {
+        render_markdown_stats(stats, git_metadata.as_ref())
+    })
 }
 
 pub fn render_raw(snapshot: &Snapshot, max_size: u64, max_chars: Option<u64>) -> String {
@@ -132,12 +149,16 @@ pub fn render_structure_with_options(
     let fence = markdown_fence_for(&tree_str);
     let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
     let stats = compute_stats_with_options(snapshot, max_size, options);
-    prepend_stats(stats, &body, render_markdown_stats)
+    let git_metadata = detect_git_metadata(&snapshot.root);
+    prepend_stats(stats, &body, |stats| {
+        render_markdown_stats(stats, git_metadata.as_ref())
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::git::GitMetadata;
     use crate::tree::{insert_entry, Snapshot};
     use std::collections::BTreeMap;
     use std::fs;
@@ -161,6 +182,56 @@ mod tests {
         assert!(output.contains("# Project Structure"));
         assert!(output.contains("example-project/\n"));
         assert!(!output.contains("# File Contents"));
+    }
+
+    #[test]
+    fn markdown_stats_include_available_git_metadata() {
+        let stats = ProjectStats {
+            files: 1,
+            dirs: 0,
+            lines: 1,
+            size: 4,
+            estimated_tokens: 25,
+        };
+        let metadata = GitMetadata {
+            branch: Some("main".to_string()),
+            commit_hash: Some("0123456789abcdef".to_string()),
+            remote_url: Some("git@example.com:owner/repo.git".to_string()),
+        };
+
+        assert_eq!(
+            render_markdown_stats(&stats, Some(&metadata)),
+            "# Project Statistics\n\
+             - Files: 1\n\
+             - Directories: 0\n\
+             - Total lines: 1\n\
+             - Total size: 4 bytes\n\
+             - Tokens (o200k_base): 25\n\
+             - Git branch: main\n\
+             - Git commit: 0123456789abcdef\n\
+             - Git remote: git@example.com:owner/repo.git\n\n"
+        );
+    }
+
+    #[test]
+    fn markdown_stats_without_git_metadata_are_unchanged() {
+        let stats = ProjectStats {
+            files: 1,
+            dirs: 0,
+            lines: 1,
+            size: 4,
+            estimated_tokens: 25,
+        };
+
+        assert_eq!(
+            render_markdown_stats(&stats, None),
+            "# Project Statistics\n\
+             - Files: 1\n\
+             - Directories: 0\n\
+             - Total lines: 1\n\
+             - Total size: 4 bytes\n\
+             - Tokens (o200k_base): 25\n\n"
+        );
     }
 
     #[test]
@@ -223,6 +294,60 @@ mod tests {
         assert!(!output.contains("Project Statistics"));
         assert!(!output.contains("# Project Structure"));
         assert!(!output.contains("```"));
+
+        fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn markdown_and_raw_render_include_binary_metadata() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-render-binary-test-{}", std::process::id()));
+        let image_path = root.join("image.data");
+        let png = [
+            0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, b'I', b'H',
+            b'D', b'R',
+        ];
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&image_path, png).expect("test image should be written");
+
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("image.data")], false);
+        let snapshot = Snapshot { root, tree };
+
+        let marker =
+            "[Binary file not shown; MIME: image/png; size: 16 bytes; detected extension: png]";
+        assert!(render_markdown(&snapshot, 1_000, None).contains(marker));
+        assert_eq!(
+            render_raw(&snapshot, 1_000, None),
+            format!("==== image.data ====\n{marker}\n")
+        );
+
+        fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn raw_render_includes_metadata_and_limit_for_oversized_files() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-render-large-test-{}", std::process::id()));
+        let image_path = root.join("image.png");
+        let png = [
+            0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, b'I', b'H',
+            b'D', b'R',
+        ];
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&image_path, png).expect("test image should be written");
+
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("image.png")], false);
+        let snapshot = Snapshot { root, tree };
+
+        assert_eq!(
+            render_raw(&snapshot, 8, None),
+            "==== image.png ====\n\
+             [File too large; MIME: image/png; size: 16 bytes; detected extension: png; limit: 8 bytes]\n"
+        );
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
     }
