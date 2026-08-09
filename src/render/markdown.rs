@@ -11,7 +11,7 @@ fn render_markdown_stats(stats: &ProjectStats) -> String {
          - Directories: {}\n\
          - Total lines: {}\n\
          - Total size: {}\n\
-         - Estimated tokens: {}\n\n",
+         - Tokens (o200k_base): {}\n\n",
         format_count(stats.files),
         format_count(stats.dirs),
         format_count(stats.lines),
@@ -180,7 +180,14 @@ mod tests {
         let output = render_markdown(&snapshot, 1_000, None);
 
         assert!(output.starts_with("# Project Statistics"));
-        assert!(output.contains("- Estimated tokens: "));
+        let token_count = output
+            .lines()
+            .find_map(|line| line.strip_prefix("- Tokens (o200k_base): "))
+            .expect("statistics should contain an o200k token count")
+            .replace(',', "")
+            .parse::<usize>()
+            .expect("token count should be a number");
+        assert_eq!(token_count, estimate_tokens(&output));
         assert!(output.contains("## README.md\n\n````\nbefore\n```rust"));
         assert!(output.contains("```\nafter\n````\n"));
 

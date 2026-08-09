@@ -118,7 +118,7 @@ mod tests {
 
         assert_eq!(output, "README.md: readme\n");
         assert!(!output.contains("Project Statistics"));
-        assert!(!output.contains("Estimated tokens"));
+        assert!(!output.contains("Tokens (o200k_base)"));
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
     }

@@ -58,7 +58,7 @@ pub struct Cli {
     #[arg(short = 'r', requires = "max_chars")]
     pub from_end: bool,
 
-    /// Print the estimated token count and exit
+    /// Count o200k_base tokens and exit
     #[arg(short = 't', long = "tokens")]
     pub tokens: bool,
 
@@ -191,7 +191,7 @@ pub struct ReverseCommand {
     #[arg(short = 'r', requires = "max_chars")]
     pub from_end: bool,
 
-    /// Print the estimated token count and exit
+    /// Count o200k_base tokens and exit
     #[arg(short = 't', long = "tokens")]
     pub tokens: bool,
 

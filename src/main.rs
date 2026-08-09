@@ -59,7 +59,7 @@ fn run_copy(cli: Cli) -> Result<()> {
     };
 
     if cli.tokens {
-        println!("Estimated tokens: {}", estimate_tokens(&output));
+        println!("Tokens (o200k_base): {}", estimate_tokens(&output));
         return Ok(());
     }
 
@@ -146,7 +146,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
     );
 
     if command.tokens {
-        println!("Estimated tokens: {}", estimate_tokens(&output));
+        println!("Tokens (o200k_base): {}", estimate_tokens(&output));
         return Ok(());
     }
 

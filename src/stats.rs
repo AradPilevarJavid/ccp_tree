@@ -1,6 +1,7 @@
 use crate::file::{read_file_text_with_options, ContentOptions, FileText};
 use crate::tree::{collect_files, count_dirs, Snapshot};
 use std::fs;
+use tiktoken_rs::o200k_base_singleton;
 
 #[derive(Debug, Clone)]
 pub struct ProjectStats {
@@ -51,7 +52,7 @@ pub fn compute_stats_with_options(
 }
 
 pub fn estimate_tokens(text: &str) -> usize {
-    (text.chars().count() / 4).max(1)
+    o200k_base_singleton().count_ordinary(text)
 }
 
 pub(crate) fn format_count<T: std::fmt::Display>(value: T) -> String {
@@ -128,5 +129,21 @@ mod tests {
         assert_eq!(stats.estimated_tokens, 0);
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn estimate_tokens_uses_o200k_tokenization() {
+        assert_eq!(estimate_tokens(""), 0);
+        assert_eq!(estimate_tokens("hello"), 1);
+        assert_eq!(estimate_tokens("hello world"), 2);
+        assert_eq!(estimate_tokens("fn main() { println!(\"hello\"); }"), 9);
+    }
+
+    #[test]
+    fn estimate_tokens_handles_unicode_and_special_token_literals() {
+        let text = "سلام 👋 <|endoftext|>";
+
+        assert!(estimate_tokens(text) > 0);
+        assert_eq!(estimate_tokens(text), estimate_tokens(text));
     }
 }

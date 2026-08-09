@@ -113,7 +113,7 @@ ccp --raw                    # raw file contents only
 ccp --head 100               # first 100 lines from each file
 ccp --tail 100               # last 100 lines from each file
 ccp -cr --max-chars 4000     # copy the last 4,000 characters from each file
-ccp -t                       # print the estimated token count and exit
+ccp -t                       # count o200k_base tokens and exit
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
@@ -223,7 +223,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--head <LINES>`            | Include only the first number of lines from each file. |
 | `--tail <LINES>`            | Include only the last number of lines from each file. |
 | `-r`                        | Apply `--max-chars` from the end of each file. |
-| `-t`, `--tokens`            | Print the estimated token count for the selected output and exit. |
+| `-t`, `--tokens`            | Count `o200k_base` tokens for the selected output and exit. |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
 | `--raw`                     | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |
@@ -233,6 +233,8 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--quiet`, `-q`             | Suppress non‑essential output. |
 | `-o`, `--output <FILE>`     | Write output to a file instead of stdout. |
 | `-c`, `--clipboard`         | Copy output to clipboard (requires the `clipboard` feature). |
+
+Token counts use the `o200k_base` BPE encoding used by modern OpenAI models. Counts are exact for that encoding, but may differ for models that use another tokenizer and do not include chat-message wrapper overhead.
 
 ### `ccp generate` / `ccp create` options
 ### if you run ccp create --help you will see:
@@ -381,6 +383,7 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ## Roadmap(TODO)
 some of these are already partly done.
 - [x] Release on AUR
+<<<<<<< HEAD
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [x] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
 - [x] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
@@ -388,6 +391,14 @@ some of these are already partly done.
 - [x] be able to point out a specific file to not include
 - [x] Add project statistics (files, directories, lines, size)
 - [x] Estimate LLM token count for generated output
+=======
+- [ ] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
+- [x] Implement complete `o200k_base` BPE tokenization instead of the 4-characters-per-token heuristic.
+- [ ] generate a manual page.(Or a more complete help)
+- [ ] be able to point out a specific file to not include
+- [ ] Add project statistics (files, directories, lines, size)
+- [x] Count generated-output tokens with `o200k_base`
+>>>>>>> 0fb55da (Implemented a complete tokenizer/pros:tokenizer cons:the tool became a little slower)
 - [ ] Support XML output format
 - [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
 - [ ] Detect and warn about potential secrets before exporting
