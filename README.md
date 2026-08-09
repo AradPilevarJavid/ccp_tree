@@ -391,7 +391,7 @@ some of these are already partly done.
 - [ ] Handle files that are too large (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
 - [x] Have the name of the project directory when printing the structure (minor change)
-- [ ] handle files like gifs
+- [x] handle files like gifs
 
 
 ## License 📜
