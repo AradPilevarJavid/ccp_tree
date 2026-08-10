@@ -372,6 +372,7 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ---
 ## Roadmap(TODO)
 some of these are already partly done.
+- [ ] Implement a button(possibly as a file) that if clicked would function like `ccp -c`.
 - [x] Release on AUR
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [x] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
