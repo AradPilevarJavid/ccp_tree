@@ -315,8 +315,8 @@ mod tests {
         insert_entry(&mut tree, &[String::from("image.data")], false);
         let snapshot = Snapshot { root, tree };
 
-        let marker =
-            "[Binary file not shown; MIME: image/png; size: 16 bytes; detected extension: png]";
+        let marker = "[Binary file not shown; MIME: image/png; detected by: content signature; \
+                      size: 16 bytes; detected extension: png]";
         assert!(render_markdown(&snapshot, 1_000, None).contains(marker));
         assert_eq!(
             render_raw(&snapshot, 1_000, None),
@@ -346,7 +346,7 @@ mod tests {
         assert_eq!(
             render_raw(&snapshot, 8, None),
             "==== image.png ====\n\
-             [File too large; MIME: image/png; size: 16 bytes; detected extension: png; limit: 8 bytes]\n"
+             [File too large; MIME: image/png; detected by: content signature; size: 16 bytes; detected extension: png; limit: 8 bytes]\n"
         );
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");

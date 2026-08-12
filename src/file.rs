@@ -3,7 +3,9 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 
-const MIME_DETECTION_BYTES: u64 = 8 * 1024;
+const MIME_DETECTION_BYTES: usize = 8 * 1024;
+const MAX_CONTROL_BYTE_PERCENT: usize = 1;
+const MIN_BINARY_CONTROL_BYTES: usize = 3;
 
 #[derive(Debug, Clone)]
 pub enum FileText {
@@ -85,7 +87,7 @@ pub fn inspect_file_with_options(
     if metadata.len() > max_size {
         let mut bytes = Vec::new();
         File::open(path)?
-            .take(MIME_DETECTION_BYTES)
+            .take(MIME_DETECTION_BYTES as u64)
             .read_to_end(&mut bytes)?;
         return Ok(InspectedFile::TooLarge {
             metadata: detect_file_metadata(path, &bytes, metadata.len()),
@@ -94,11 +96,25 @@ pub fn inspect_file_with_options(
     }
 
     let bytes = fs::read(path)?;
+    let detection_bytes = &bytes[..bytes.len().min(MIME_DETECTION_BYTES)];
+
+    if has_binary_content_signature(detection_bytes) || looks_binary(detection_bytes) {
+        return Ok(InspectedFile::Binary(detect_file_metadata(
+            path,
+            detection_bytes,
+            metadata.len(),
+        )));
+    }
+
+    if let Some(text) = decode_utf16(&bytes) {
+        return Ok(InspectedFile::Text(apply_content_options(text, options)));
+    }
+
     match String::from_utf8(bytes) {
         Ok(text) => Ok(InspectedFile::Text(apply_content_options(text, options))),
         Err(error) => Ok(InspectedFile::Binary(detect_file_metadata(
             path,
-            error.as_bytes(),
+            &error.as_bytes()[..error.as_bytes().len().min(MIME_DETECTION_BYTES)],
             metadata.len(),
         ))),
     }
@@ -137,12 +153,89 @@ pub fn file_content_with_options(
 pub(crate) fn format_metadata(metadata: &FileMetadata) -> String {
     let mut fields = vec![
         format!("MIME: {}", metadata.mime_type),
+        format!(
+            "detected by: {}",
+            match metadata.mime_detection {
+                MimeDetection::Content => "content signature",
+                MimeDetection::Extension => "file extension",
+                MimeDetection::Fallback => "fallback",
+            }
+        ),
         format!("size: {}", format_bytes(metadata.size)),
     ];
     if let Some(extension) = &metadata.extension {
         fields.push(format!("detected extension: {extension}"));
     }
     fields.join("; ")
+}
+
+fn has_binary_content_signature(bytes: &[u8]) -> bool {
+    infer::get(bytes)
+        .map(|kind| !is_textual_mime(kind.mime_type()))
+        .unwrap_or(false)
+}
+
+fn is_textual_mime(mime_type: &str) -> bool {
+    mime_type.starts_with("text/")
+        || matches!(
+            mime_type,
+            "application/json"
+                | "application/ld+json"
+                | "application/javascript"
+                | "application/postscript"
+                | "application/rtf"
+                | "application/xml"
+                | "application/xhtml+xml"
+                | "image/svg+xml"
+        )
+        || mime_type.ends_with("+json")
+        || mime_type.ends_with("+xml")
+}
+
+fn looks_binary(bytes: &[u8]) -> bool {
+    if bytes.is_empty() || has_utf16_bom(bytes) {
+        return false;
+    }
+    if bytes.contains(&0) {
+        return true;
+    }
+
+    let control_bytes = bytes
+        .iter()
+        .filter(|byte| matches!(byte, 0x01..=0x08 | 0x0b | 0x0e..=0x1f | 0x7f))
+        .count();
+    control_bytes >= MIN_BINARY_CONTROL_BYTES
+        && control_bytes * 100 > bytes.len() * MAX_CONTROL_BYTE_PERCENT
+}
+
+fn has_utf16_bom(bytes: &[u8]) -> bool {
+    bytes.starts_with(&[0xff, 0xfe]) || bytes.starts_with(&[0xfe, 0xff])
+}
+
+fn decode_utf16(bytes: &[u8]) -> Option<String> {
+    let little_endian = if bytes.starts_with(&[0xff, 0xfe]) {
+        true
+    } else if bytes.starts_with(&[0xfe, 0xff]) {
+        false
+    } else {
+        return None;
+    };
+
+    let body = &bytes[2..];
+    if !body.len().is_multiple_of(2) {
+        return None;
+    }
+    let code_units = body.chunks_exact(2).map(|chunk| {
+        let pair = [chunk[0], chunk[1]];
+        if little_endian {
+            u16::from_le_bytes(pair)
+        } else {
+            u16::from_be_bytes(pair)
+        }
+    });
+    std::char::decode_utf16(code_units)
+        .collect::<Result<String, _>>()
+        .ok()
 }
 
 fn detect_file_metadata(path: &Path, bytes: &[u8], size: u64) -> FileMetadata {
@@ -339,6 +432,104 @@ mod tests {
             read_file_text(&path, 1_000, None).expect("legacy read should succeed"),
             FileText::Binary
         ));
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn inspect_file_rejects_valid_utf8_with_binary_control_bytes() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-file-control-test-{}", std::process::id()));
+        let path = root.join("payload.bin");
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&path, [0, 1, 2, 3, b'A']).expect("test binary should be written");
+
+        assert_eq!(
+            inspect_file(&path, 1_000, None).expect("file should be inspected"),
+            InspectedFile::Binary(FileMetadata {
+                size: 5,
+                mime_type: "application/octet-stream".to_string(),
+                extension: Some("bin".to_string()),
+                mime_detection: MimeDetection::Extension,
+            })
+        );
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn inspect_file_keeps_short_text_with_terminal_escapes() {
+        let root = std::env::temp_dir().join(format!("ccp-file-ansi-test-{}", std::process::id()));
+        let path = root.join("output.log");
+        let text = "\x1b[31merror\x1b[0m\n";
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&path, text).expect("test text should be written");
+
+        assert_eq!(
+            inspect_file(&path, 1_000, None).expect("file should be inspected"),
+            InspectedFile::Text(text.to_string())
+        );
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn inspect_file_uses_content_signature_before_utf8_classification() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-file-signature-test-{}", std::process::id()));
+        let path = root.join("misleading.txt");
+        let gif = b"GIF89a\x01\0\x01\0\x80\0\0\0\0\0\xff\xff\xff";
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&path, gif).expect("test image should be written");
+
+        assert_eq!(
+            inspect_file(&path, 1_000, None).expect("file should be inspected"),
+            InspectedFile::Binary(FileMetadata {
+                size: gif.len() as u64,
+                mime_type: "image/gif".to_string(),
+                extension: Some("gif".to_string()),
+                mime_detection: MimeDetection::Content,
+            })
+        );
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn inspect_file_keeps_textual_mime_signatures_as_text() {
+        let root = std::env::temp_dir().join(format!("ccp-file-rtf-test-{}", std::process::id()));
+        let path = root.join("document.rtf");
+        let text = r"{\rtf1\ansi Hello from RTF}";
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&path, text).expect("test text should be written");
+
+        assert_eq!(
+            inspect_file(&path, 1_000, None).expect("file should be inspected"),
+            InspectedFile::Text(text.to_string())
+        );
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn inspect_file_decodes_utf16_text_with_a_bom() {
+        let root = std::env::temp_dir().join(format!("ccp-file-utf16-test-{}", std::process::id()));
+        let path = root.join("notes.txt");
+        let text = "Hello, UTF-16! 👋";
+        let mut bytes = vec![0xff, 0xfe];
+        bytes.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&path, bytes).expect("test text should be written");
+
+        assert_eq!(
+            inspect_file(&path, 1_000, None).expect("file should be inspected"),
+            InspectedFile::Text(text.to_string())
+        );
 
         fs::remove_dir_all(root).expect("test root should be removed");
     }

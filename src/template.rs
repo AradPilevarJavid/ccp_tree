@@ -43,6 +43,7 @@ pub fn load_template(templates_dir: &Path, name: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::parse_tree_definition;
 
     #[test]
     fn load_template_falls_back_to_builtin_templates() {
@@ -51,5 +52,37 @@ mod tests {
 
         assert!(template.contains("main.py"));
         assert!(template.contains("Hello from ccp"));
+    }
+
+    #[test]
+    fn expected_builtin_templates_are_available_and_valid() {
+        let expected = [
+            "c",
+            "cpp",
+            "go",
+            "java",
+            "node",
+            "python",
+            "react",
+            "ruby",
+            "rust",
+            "typescript",
+            "web",
+        ];
+        let actual = BUILTIN_TEMPLATES
+            .iter()
+            .map(|(name, _)| *name)
+            .collect::<Vec<_>>();
+
+        assert_eq!(actual, expected);
+
+        for (name, template) in BUILTIN_TEMPLATES {
+            let nodes = parse_tree_definition(template)
+                .unwrap_or_else(|error| panic!("built-in template '{name}' is invalid: {error}"));
+            assert!(
+                !nodes.is_empty(),
+                "built-in template '{name}' should not be empty"
+            );
+        }
     }
 }

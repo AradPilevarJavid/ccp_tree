@@ -174,9 +174,14 @@ A lightweight, indentation‑based format that describes files and directories.
     line one
     line two
   ```
-- **Binary files** or files exceeding `--max-size` are automatically marked:  
-  `image.png: <binary file>`  
-  `large.csv: <file too large>`
+- **Binary files** or files exceeding `--max-size` are automatically marked with
+  their MIME type, detection method, size, and detected extension:
+  `image.png: <binary file; MIME: image/png; detected by: content signature; size: 1,024 bytes; detected extension: png>`
+- MIME detection prefers file signatures, falls back to the filename extension,
+  and uses `application/octet-stream` when neither provides a match.
+- UTF-16 text with a byte-order mark is decoded as text, while NUL bytes and
+  suspicious control-byte sequences are treated as binary even when technically
+  valid UTF-8.
 
 ### Example
 
@@ -327,14 +332,27 @@ ccp ../another-project -s -o structure.md
 
 ## Built‑in Templates 📦
 
-`ccp` ships with a few starter templates (bundled at compile time).  
+`ccp` ships with starter templates bundled at compile time.
 Check the available ones with a non‑existent name:
 
 ```bash
 ccp generate --template not-a-template  # error message lists all built‑in templates
 ```
 
-Currently included: `python` (a minimal Python project).  
+Currently included:
+
+- Systems: `c`, `cpp`, `rust`
+- Backend and general-purpose: `go`, `java`, `python`, `ruby`
+- JavaScript and web: `node`, `react`, `typescript`, `web`
+
+For example:
+
+```bash
+ccp create my-rust-app --template rust
+ccp create my-react-app --template react
+ccp create my-static-site --template web
+```
+
 Add your own by placing `.tree` files into a `templates/` directory next to where you run `ccp`, or specify a path with `--templates-dir`.
 
 The template loader checks:
@@ -387,8 +405,8 @@ some of these are already partly done.
 - [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
 - [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw
-- [ ] Improve binary file handling with MIME-type detection
-- [ ] Add more built‑in templates (Rust, React, Go)
+- [x] Improve binary file handling with MIME-type detection
+- [x] Add more built‑in templates (C, C++, Go, Java, Node.js, React, Ruby, Rust, TypeScript, Web)
 - [ ] Handle files that are too large (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
 - [x] Have the name of the project directory when printing the structure (minor change)

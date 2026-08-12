@@ -154,7 +154,7 @@ mod tests {
 
         assert_eq!(
             output,
-            "image.data: <binary file; MIME: image/png; size: 16 bytes; detected extension: png>\n"
+            "image.data: <binary file; MIME: image/png; detected by: content signature; size: 16 bytes; detected extension: png>\n"
         );
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
