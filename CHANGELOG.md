@@ -4,6 +4,7 @@
 
 - Added built-in starter templates for C, C++, Go, Java, Node.js, React, Ruby, Rust, TypeScript, and plain HTML/CSS/JavaScript projects.
 - Improved binary detection using MIME signatures and control-byte heuristics, added UTF-16 text decoding, and exposed the MIME detection method in output metadata.
+- Reworked `ccp-mangen` to generate complete main and subcommand man pages, added stdout rendering, and expanded the manual with examples and `.tree` syntax.
 - Added `-t` / `--tokens` to snapshot and reverse modes to count `o200k_base` BPE tokens and exit.
 - Replaced the four-characters-per-token heuristic with complete `o200k_base` tokenization.
 - Added MIME detection and size metadata for binary and oversized files.

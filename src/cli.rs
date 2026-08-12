@@ -5,6 +5,41 @@ use std::path::PathBuf;
 #[command(name = "ccp")]
 #[command(version)]
 #[command(about = "Snapshot, scaffold, and blueprint projects")]
+#[command(long_about = "\
+Create AI-friendly project snapshots, inspect directory structures, produce \
+reusable .tree blueprints, and scaffold projects from those blueprints.")]
+#[command(after_long_help = r#"
+EXAMPLES:
+  ccp
+      Snapshot the current directory as Markdown.
+
+  ccp ./my-project --structure
+      Print the project tree and statistics without file contents.
+
+  ccp ./my-project --raw --max-chars 4000
+      Emit delimited raw contents, truncating each file to 4,000 characters.
+
+  ccp reverse ./my-project -o my-project.tree
+      Save a reusable .tree blueprint.
+
+  ccp create ./new-project --template rust
+      Create a project from a built-in template.
+
+  ccp generate ./new-project --input project.tree
+      Create files from a .tree definition.
+
+TREE FORMAT:
+  Directories end with '/'. File content follows ':'; multiline content uses ':|'
+  and is indented by two additional spaces.
+
+  src/
+    main.rs:|
+      fn main() {
+          println!(\"Hello\");
+      }
+
+SEE ALSO:
+  ccp-generate(1), ccp-create(1), ccp-reverse(1)"#)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,

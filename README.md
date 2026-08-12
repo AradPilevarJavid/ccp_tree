@@ -61,13 +61,28 @@ cd ccp
 cargo build --release
 ```
 
-The Arch package also installs a generated `ccp(1)` man page. Cargo does not
-install man pages, but you can generate one locally with:
+The Arch package installs `ccp(1)` and separate pages for each subcommand.
+Cargo does not install man pages, but you can generate the complete set locally:
 
 ```bash
-cargo run --release --bin ccp-mangen -- /tmp
-man -l /tmp/ccp.1
+cargo run --release --bin ccp-mangen
+man -l target/man/ccp.1
 ```
+
+To read the main page without creating files:
+
+```bash
+cargo run --quiet --bin ccp-mangen -- --stdout | man -l -
+```
+
+If `man` is unavailable, pipe the rendered page through `groff`, or inspect the
+generated roff source with `less`:
+
+```bash
+less target/man/ccp.1
+```
+
+Run `ccp-mangen --help` for output-directory and stdout options.
 
 The binary will be at `./target/release/ccp`.
 
@@ -395,7 +410,7 @@ some of these are already partly done.
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [x] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
 - [x] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
-- [ ] generate a manual page.(Or a more complete help)
+- [x] Generate complete manual pages for `ccp` and its subcommands
 - [x] be able to point out a specific file to not include
 - [x] Add project statistics (files, directories, lines, size)
 - [x] Estimate LLM token count for generated output
