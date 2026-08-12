@@ -53,13 +53,6 @@ cargo install ccp --features clipboard
 
 > On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
 
-### From source
-
-```bash
-git clone https://github.com/AradPilevarJavid/ccp
-cd ccp
-cargo build --release
-```
 
 The Arch package installs `ccp(1)` and separate pages for each subcommand.
 Cargo does not install man pages, but you can generate the complete set locally:
@@ -418,7 +411,7 @@ some of these are already partly done.
 - [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw
 - [ ] Handle files that are too large (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
-
+- [ ] make the --help short and let the manual remain long.
 
 ## License 📜
 
