@@ -1,13 +1,16 @@
 use anstream::println as aprintln;
 use anyhow::{Context, Result};
 use ccp_tree::{
+    apply_config,
     cli::{Cli, Command, GenerateCommand, ReverseCommand},
     create_tree, estimate_tokens, fmt_colored_tree, load_template, nodes_to_entries,
     parse_tree_definition, render_markdown_with_options, render_raw_with_options,
     render_structure_with_options, render_tree_definition_with_options, scan_snapshot_for_secrets,
     snapshot, ContentOptions, GenerateOptions, SecretFinding, Snapshot, WalkOptions,
 };
+#[cfg(test)]
 use clap::Parser;
+use clap::{CommandFactory, FromArgMatches};
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
@@ -16,7 +19,10 @@ use std::path::{Path, PathBuf};
 use ccp_tree::set_clipboard;
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let matches = Cli::command().get_matches();
+    let mut cli = Cli::from_arg_matches(&matches)?;
+    let config = ccp_tree::load_default_config()?;
+    apply_config(&mut cli, &matches, &config)?;
     match cli.command {
         Some(Command::Generate(command)) | Some(Command::Create(command)) => run_generate(command),
         Some(Command::Reverse(command)) => run_reverse(command),
@@ -308,9 +314,20 @@ mod tests {
             Cli::try_parse_from(["ccp", "-cr", "--max-chars", "120"]).expect("-cr should parse");
 
         assert!(cli.clipboard);
+        assert!(!cli.no_clipboard);
         assert!(cli.from_end);
         assert_eq!(cli.max_chars, Some(120));
         assert!(!cli.raw);
+    }
+
+    #[cfg(feature = "clipboard")]
+    #[test]
+    fn no_clipboard_flag_parses() {
+        let cli =
+            Cli::try_parse_from(["ccp", "--no-clipboard"]).expect("--no-clipboard should parse");
+
+        assert!(cli.no_clipboard);
+        assert!(!cli.clipboard);
     }
 
     #[test]
@@ -322,9 +339,15 @@ mod tests {
 
     #[test]
     fn reverse_direction_requires_max_chars() {
-        let result = Cli::try_parse_from(["ccp", "-r"]);
+        let matches = Cli::command()
+            .try_get_matches_from(["ccp", "-r"])
+            .expect("-r should parse before config is applied");
+        let mut cli = Cli::from_arg_matches(&matches).expect("CLI should be constructed");
 
-        assert!(result.is_err());
+        let error = apply_config(&mut cli, &matches, &ccp_tree::Config::default())
+            .expect_err("-r without max_chars should fail");
+
+        assert!(error.to_string().contains("'from_end'"));
     }
 
     #[test]

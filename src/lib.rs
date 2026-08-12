@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod config;
 pub mod exclude;
 pub mod file;
 pub mod git;
@@ -15,6 +16,7 @@ pub mod clipboard;
 
 #[cfg(feature = "clipboard")]
 pub use clipboard::set_clipboard;
+pub use config::{apply_config, load_config_files, load_default_config, Config, CONFIG_FILE_NAME};
 pub use exclude::{
     is_useless_dir, is_useless_dir_name, load_default_exclude_patterns, load_ignore_patterns,
     should_exclude, ExcludePattern, DEFAULT_EXCLUDES,

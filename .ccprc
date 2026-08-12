@@ -1,0 +1,24 @@
+# Local ccp configuration. ~/.ccprc has higher priority than this file.
+# Uncomment the settings you want to use.
+
+# templates_dir = "templates"
+# clipboard = true
+# include_hidden = false
+# no_ignore = false
+# all = false
+# exclude = ["*.generated", "secrets/"]
+# max_size = 1048576
+# max_chars = 12000
+# head = 200
+# tail = 200
+# from_end = false
+# tokens = false
+# no_content = false
+# structure = false
+# reverse = false
+# raw = false
+# dry_run = false
+# verbose = false
+# quiet = false
+# no_secret_scan = false
+# force = false

@@ -38,6 +38,10 @@ TREE FORMAT:
           println!(\"Hello\");
       }
 
+CONFIGURATION:
+  ccp reads ./.ccprc and ~/.ccprc as TOML. Global settings take priority over
+  local settings, and explicit command-line arguments take priority over both.
+
 SEE ALSO:
   ccp-generate(1), ccp-create(1), ccp-reverse(1)"#)]
 pub struct Cli {
@@ -54,8 +58,13 @@ pub struct Cli {
 
     /// Copy the result to the system clipboard (requires the 'clipboard' feature)
     #[cfg(feature = "clipboard")]
-    #[arg(long, short = 'c')]
+    #[arg(long, short = 'c', conflicts_with = "no_clipboard")]
     pub clipboard: bool,
+
+    /// Do not copy to the clipboard, overriding .ccprc
+    #[cfg(feature = "clipboard")]
+    #[arg(long)]
+    pub no_clipboard: bool,
 
     /// Include hidden files and directories (those starting with a dot)
     #[arg(long)]
@@ -90,7 +99,7 @@ pub struct Cli {
     pub tail: Option<usize>,
 
     /// Apply character limits from the end of each file
-    #[arg(short = 'r', requires = "max_chars")]
+    #[arg(short = 'r')]
     pub from_end: bool,
 
     /// Count o200k_base tokens and exit
@@ -191,8 +200,13 @@ pub struct ReverseCommand {
 
     /// Copy the result to the system clipboard (requires the 'clipboard' feature)
     #[cfg(feature = "clipboard")]
-    #[arg(long, short = 'c')]
+    #[arg(long, short = 'c', conflicts_with = "no_clipboard")]
     pub clipboard: bool,
+
+    /// Do not copy to the clipboard, overriding .ccprc
+    #[cfg(feature = "clipboard")]
+    #[arg(long)]
+    pub no_clipboard: bool,
 
     /// Include hidden files and directories
     #[arg(long)]
@@ -227,7 +241,7 @@ pub struct ReverseCommand {
     pub tail: Option<usize>,
 
     /// Apply character limits from the end of each file
-    #[arg(short = 'r', requires = "max_chars")]
+    #[arg(short = 'r')]
     pub from_end: bool,
 
     /// Count o200k_base tokens and exit

@@ -82,6 +82,45 @@ The binary will be at `./target/release/ccp`.
 
 ---
 
+## Configuration (`.ccprc`) ⚙️
+
+`ccp` reads two optional TOML configuration files:
+
+1. `./.ccprc` — local project configuration
+2. `~/.ccprc` — global user configuration
+
+Priority is: explicit CLI arguments > global config > local config > built-in
+defaults. This means your global preferences remain authoritative, while the
+local file can provide project defaults for settings not defined globally.
+
+Example:
+
+```toml
+templates_dir = "templates"
+clipboard = true
+max_size = 1048576
+max_chars = 12000
+exclude = ["*.generated", "secrets/"]
+no_secret_scan = false
+quiet = false
+```
+
+Relative `templates_dir` paths are resolved from the directory containing the
+`.ccprc` that defines them. Arrays such as `exclude` replace the lower-priority
+array instead of being appended.
+
+Most reusable flags can be configured, including `include_hidden`, `no_ignore`,
+`all`, `head`, `tail`, `from_end`, `tokens`, `no_content`, `structure`,
+`reverse`, `raw`, `dry_run`, `verbose`, `quiet`, and `force`.
+
+If `clipboard = true`, use `--no-clipboard` for a single command that should
+print or write normally instead.
+
+The repository includes a commented [`.ccprc`](.ccprc) example that can be
+copied to your home directory and customized.
+
+---
+
 ## Quick Start ⚡
 
 Work from any directory; by default `ccp` scans the current folder.
@@ -405,7 +444,7 @@ some of these are already partly done.
 - [ ] Implement a button(possibly as a file) that if clicked would function like `ccp -c`.
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [ ] Support XML output format
-- [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
+- [x] Add global and local `.ccprc` configuration support
 - [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
 - [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw
