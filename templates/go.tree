@@ -1,0 +1,33 @@
+go.mod:|
+  module example.com/ccp-go-starter
+
+  go 1.22
+main.go:|
+  package main
+
+  import "fmt"
+
+  func greeting() string {
+      return "Hello from Go!"
+  }
+
+  func main() {
+      fmt.Println(greeting())
+  }
+main_test.go:|
+  package main
+
+  import "testing"
+
+  func TestGreeting(t *testing.T) {
+      if got := greeting(); got != "Hello from Go!" {
+          t.Fatalf("greeting() = %q", got)
+      }
+  }
+README.md:|
+  # Go Starter
+
+  Run with `go run .` and test with `go test ./...`.
+.gitignore:|
+  /ccp-go-starter
+  *.test

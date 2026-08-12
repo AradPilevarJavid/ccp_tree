@@ -1,0 +1,52 @@
+index.html:|
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Web Starter</title>
+      <link rel="stylesheet" href="css/styles.css" />
+    </head>
+    <body>
+      <main class="container">
+        <h1>Hello from the web!</h1>
+        <button id="hello-button" type="button">Click me</button>
+        <p id="message" aria-live="polite"></p>
+      </main>
+      <script src="js/main.js"></script>
+    </body>
+  </html>
+css/
+  styles.css:|
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    .container {
+      max-width: 42rem;
+      margin: 5rem auto;
+      padding: 0 1.5rem;
+      text-align: center;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 0.65rem 1rem;
+    }
+js/
+  main.js:|
+    const button = document.querySelector("#hello-button");
+    const message = document.querySelector("#message");
+
+    button.addEventListener("click", () => {
+      message.textContent = "JavaScript is working!";
+    });
+README.md:|
+  # Web Starter
+
+  Open `index.html` in a browser or serve this directory with any static file server.

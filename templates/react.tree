@@ -1,0 +1,86 @@
+package.json:|
+  {
+    "name": "ccp-react-starter",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+    },
+    "dependencies": {
+      "@vitejs/plugin-react": "^4.3.0",
+      "vite": "^5.4.0",
+      "react": "^18.3.0",
+      "react-dom": "^18.3.0"
+    },
+    "devDependencies": {}
+  }
+index.html:|
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>React Starter</title>
+    </head>
+    <body>
+      <div id="root"></div>
+      <script type="module" src="/src/main.jsx"></script>
+    </body>
+  </html>
+vite.config.js:|
+  import { defineConfig } from "vite";
+  import react from "@vitejs/plugin-react";
+
+  export default defineConfig({
+    plugins: [react()],
+  });
+src/
+  App.jsx:|
+    import "./styles.css";
+
+    export default function App() {
+      return (
+        <main className="app">
+          <h1>Hello from React!</h1>
+          <p>Edit <code>src/App.jsx</code> to get started.</p>
+        </main>
+      );
+    }
+  main.jsx:|
+    import { StrictMode } from "react";
+    import { createRoot } from "react-dom/client";
+    import App from "./App.jsx";
+
+    createRoot(document.getElementById("root")).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  styles.css:|
+    :root {
+      color: #1f2937;
+      background: #f8fafc;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    .app {
+      max-width: 42rem;
+      margin: 5rem auto;
+      padding: 2rem;
+      text-align: center;
+    }
+README.md:|
+  # React Starter
+
+  Install dependencies with `npm install`, then start Vite with `npm run dev`.
+.gitignore:|
+  node_modules/
+  dist/
+  .env.local

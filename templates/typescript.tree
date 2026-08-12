@@ -1,0 +1,39 @@
+package.json:|
+  {
+    "name": "ccp-typescript-starter",
+    "private": true,
+    "version": "0.1.0",
+    "scripts": {
+      "build": "tsc",
+      "start": "node dist/index.js"
+    },
+    "devDependencies": {
+      "typescript": "^5.5.0"
+    }
+  }
+tsconfig.json:|
+  {
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext",
+      "outDir": "dist",
+      "rootDir": "src",
+      "strict": true
+    },
+    "include": ["src"]
+  }
+src/
+  index.ts:|
+    function greeting(name: string): string {
+      return `Hello, ${name}!`;
+    }
+
+    console.log(greeting("TypeScript"));
+README.md:|
+  # TypeScript Starter
+
+  Run `npm install`, `npm run build`, then `npm start`.
+.gitignore:|
+  node_modules/
+  dist/

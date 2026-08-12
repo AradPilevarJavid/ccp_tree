@@ -1,0 +1,36 @@
+package.json:|
+  {
+    "name": "ccp-node-starter",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+      "start": "node src/index.js",
+      "test": "node --test"
+    }
+  }
+src/
+  greeting.js:|
+    export function greeting(name) {
+      return `Hello, ${name}!`;
+    }
+  index.js:|
+    import { greeting } from "./greeting.js";
+
+    console.log(greeting("Node.js"));
+test/
+  greeting.test.js:|
+    import assert from "node:assert/strict";
+    import test from "node:test";
+    import { greeting } from "../src/greeting.js";
+
+    test("builds a greeting", () => {
+      assert.equal(greeting("Node.js"), "Hello, Node.js!");
+    });
+README.md:|
+  # Node.js Starter
+
+  Run with `npm start` and test with `npm test`.
+.gitignore:|
+  node_modules/
+  .env

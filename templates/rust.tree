@@ -1,0 +1,29 @@
+Cargo.toml:|
+  [package]
+  name = "ccp-rust-starter"
+  version = "0.1.0"
+  edition = "2021"
+
+  [dependencies]
+src/
+  main.rs:|
+    fn main() {
+        println!("Hello from Rust!");
+    }
+tests/
+  cli.rs:|
+    use std::process::Command;
+
+    #[test]
+    fn binary_runs() {
+        let status = Command::new(env!("CARGO_BIN_EXE_ccp-rust-starter"))
+            .status()
+            .expect("binary should run");
+        assert!(status.success());
+    }
+README.md:|
+  # Rust Starter
+
+  Run with `cargo run` and test with `cargo test`.
+.gitignore:|
+  /target

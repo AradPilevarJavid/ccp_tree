@@ -1,0 +1,30 @@
+CMakeLists.txt:|
+  cmake_minimum_required(VERSION 3.16)
+  project(ccp_cpp_starter LANGUAGES CXX)
+
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+  add_executable(ccp_cpp_starter src/main.cpp)
+src/
+  main.cpp:|
+    #include <iostream>
+
+    int main() {
+        std::cout << "Hello from C++!" << '\n';
+        return 0;
+    }
+README.md:|
+  # C++ Starter
+
+  Build and run:
+
+  ```sh
+  cmake -S . -B build
+  cmake --build build
+  ./build/ccp_cpp_starter
+  ```
+.gitignore:|
+  /build/
+  CMakeUserPresets.json

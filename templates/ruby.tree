@@ -1,0 +1,43 @@
+Gemfile:|
+  source "https://rubygems.org"
+
+  gem "rake", "~> 13.0"
+Rakefile:|
+  require "rake/testtask"
+
+  Rake::TestTask.new do |task|
+    task.pattern = "test/**/*_test.rb"
+  end
+
+  task default: :test
+lib/
+  greeting.rb:|
+    module Greeting
+      def self.call(name)
+        "Hello, #{name}!"
+      end
+    end
+bin/
+  app:|
+    #!/usr/bin/env ruby
+
+    require_relative "../lib/greeting"
+
+    puts Greeting.call("Ruby")
+test/
+  greeting_test.rb:|
+    require "minitest/autorun"
+    require_relative "../lib/greeting"
+
+    class GreetingTest < Minitest::Test
+      def test_call
+        assert_equal "Hello, Ruby!", Greeting.call("Ruby")
+      end
+    end
+README.md:|
+  # Ruby Starter
+
+  Run with `ruby bin/app` and test with `ruby -Itest test/greeting_test.rb`.
+.gitignore:|
+  /.bundle/
+  /vendor/bundle/

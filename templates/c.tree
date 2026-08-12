@@ -1,0 +1,30 @@
+CMakeLists.txt:|
+  cmake_minimum_required(VERSION 3.16)
+  project(ccp_c_starter LANGUAGES C)
+
+  set(CMAKE_C_STANDARD 11)
+  set(CMAKE_C_STANDARD_REQUIRED ON)
+  set(CMAKE_C_EXTENSIONS OFF)
+
+  add_executable(ccp_c_starter src/main.c)
+src/
+  main.c:|
+    #include <stdio.h>
+
+    int main(void) {
+        puts("Hello from C!");
+        return 0;
+    }
+README.md:|
+  # C Starter
+
+  Build and run:
+
+  ```sh
+  cmake -S . -B build
+  cmake --build build
+  ./build/ccp_c_starter
+  ```
+.gitignore:|
+  /build/
+  CMakeUserPresets.json
