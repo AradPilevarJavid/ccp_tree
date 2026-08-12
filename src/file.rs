@@ -283,7 +283,7 @@ pub(crate) fn format_bytes(size: u64) -> String {
     format!("{size} {unit}")
 }
 
-fn apply_content_options(mut text: String, options: &ContentOptions) -> String {
+pub(crate) fn apply_content_options(mut text: String, options: &ContentOptions) -> String {
     if let Some(limit) = options.head {
         text = take_head_lines(&text, limit);
     } else if let Some(limit) = options.tail {

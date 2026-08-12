@@ -1,5 +1,6 @@
 use crate::file::{file_content_with_options, markdown_fence_for, ContentOptions};
 use crate::git::{detect_git_metadata, GitMetadata};
+use crate::render::notebook::render_notebook_file;
 use crate::stats::{
     compute_stats_with_options, estimate_tokens, format_count, format_size, ProjectStats,
 };
@@ -75,6 +76,18 @@ pub fn render_markdown_with_options(
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     for path in &file_paths {
         let relative = path.strip_prefix(&snapshot.root).unwrap_or(path);
+        let is_notebook = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("ipynb"));
+        if is_notebook {
+            if let Ok(Some(content)) = render_notebook_file(path, max_size, options) {
+                body.push_str(&format!("\n## Notebook: {}\n\n", relative.display()));
+                body.push_str(&content);
+                body.push('\n');
+                continue;
+            }
+        }
         let content = match file_content_with_options(path, max_size, options) {
             Ok(content) => content,
             Err(error) => format!("[Error reading file: {}]", error),
@@ -348,6 +361,37 @@ mod tests {
             "==== image.png ====\n\
              [File too large; MIME: image/png; detected by: content signature; size: 16 bytes; detected extension: png; limit: 8 bytes]\n"
         );
+
+        fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn markdown_render_formats_notebooks_as_cells() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-render-notebook-test-{}", std::process::id()));
+        let notebook_path = root.join("analysis.ipynb");
+        let notebook = r#"{
+          "metadata": {"language_info": {"name": "python"}},
+          "cells": [{
+            "cell_type": "code",
+            "source": ["print('Success')"],
+            "outputs": [{"output_type": "stream", "name": "stdout", "text": "Success\n"}]
+          }]
+        }"#;
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&notebook_path, notebook).expect("notebook should be written");
+
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("analysis.ipynb")], false);
+        let snapshot = Snapshot { root, tree };
+
+        let output = render_markdown(&snapshot, 10_000, None);
+
+        assert!(output.contains("## Notebook: analysis.ipynb"));
+        assert!(output.contains("### Cell 1 (code)\n\n```python"));
+        assert!(output.contains("**Output:**\n\n```\nSuccess\n```"));
+        assert!(!output.contains("\"cell_type\""));
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
     }

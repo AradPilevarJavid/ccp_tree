@@ -1,5 +1,6 @@
 mod colored;
 mod markdown;
+mod notebook;
 mod tree_def;
 
 pub use colored::fmt_colored_tree;
