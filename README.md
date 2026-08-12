@@ -410,26 +410,14 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ## Roadmap(TODO)
 some of these are already partly done.
 - [ ] Implement a button(possibly as a file) that if clicked would function like `ccp -c`.
-- [x] Release on AUR
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
-- [x] add an option that can limit the length of the content.(Sometimes the files are larger than the max input for an ai.)
-- [x] implement a complete tokenizer instead of the current estimate_tokens function(4 chars = 1 token).
-- [x] Generate complete manual pages for `ccp` and its subcommands
-- [x] be able to point out a specific file to not include
-- [x] Add project statistics (files, directories, lines, size)
-- [x] Estimate LLM token count for generated output
 - [ ] Support XML output format
 - [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
-- [x] Detect and warn about potential secrets before exporting
 - [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
 - [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw
-- [x] Improve binary file handling with MIME-type detection
-- [x] Add more built‑in templates (C, C++, Go, Java, Node.js, React, Ruby, Rust, TypeScript, Web)
 - [ ] Handle files that are too large (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
-- [x] Have the name of the project directory when printing the structure (minor change)
-- [x] handle files like gifs
 
 
 ## License 📜
