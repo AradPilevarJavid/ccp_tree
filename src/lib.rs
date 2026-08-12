@@ -5,6 +5,7 @@ pub mod git;
 pub mod parser;
 pub mod render;
 pub mod scaffold;
+pub mod secret;
 pub mod stats;
 pub mod template;
 pub mod tree;
@@ -31,6 +32,7 @@ pub use render::{
     render_tree_definition, render_tree_definition_with_options,
 };
 pub use scaffold::{create_tree, GenerateEvent, GenerateOptions};
+pub use secret::{scan_snapshot_for_secrets, SecretFinding};
 pub use stats::{compute_stats, compute_stats_with_options, estimate_tokens, ProjectStats};
 pub use template::load_template;
 pub use tree::{collect_files, fmt_tree, insert_entry, snapshot, Entry, Snapshot, WalkOptions};

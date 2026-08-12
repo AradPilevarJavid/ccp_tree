@@ -67,6 +67,7 @@ mod tests {
 
         assert!(output.contains(".TH ccp 1"));
         assert!(output.contains(".SH OPTIONS"));
-        assert!(output.contains(".SH EXAMPLES"));
+        assert!(output.contains(".SH EXTRA"));
+        assert!(output.contains("EXAMPLES:"));
     }
 }

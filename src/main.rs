@@ -4,8 +4,8 @@ use ccp_tree::{
     cli::{Cli, Command, GenerateCommand, ReverseCommand},
     create_tree, estimate_tokens, fmt_colored_tree, load_template, nodes_to_entries,
     parse_tree_definition, render_markdown_with_options, render_raw_with_options,
-    render_structure_with_options, render_tree_definition_with_options, snapshot, ContentOptions,
-    GenerateOptions, Snapshot, WalkOptions,
+    render_structure_with_options, render_tree_definition_with_options, scan_snapshot_for_secrets,
+    snapshot, ContentOptions, GenerateOptions, SecretFinding, Snapshot, WalkOptions,
 };
 use clap::Parser;
 use std::fs;
@@ -48,6 +48,10 @@ fn run_copy(cli: Cli) -> Result<()> {
         tail: cli.tail,
         from_end: cli.from_end,
     };
+    let skips_content_export = cli.tokens || cli.structure || cli.reverse && cli.no_content;
+    if !cli.no_secret_scan && !skips_content_export {
+        warn_about_secrets(&scan, cli.max_size, &content_options);
+    }
     let output = if cli.raw {
         render_raw_with_options(&scan, cli.max_size, &content_options)
     } else if cli.reverse {
@@ -138,6 +142,9 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         tail: command.tail,
         from_end: command.from_end,
     };
+    if !command.no_secret_scan && !command.tokens && !command.no_content {
+        warn_about_secrets(&scan, command.max_size, &content_options);
+    }
     let output = render_tree_definition_with_options(
         &scan,
         command.max_size,
@@ -168,6 +175,25 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         .output
         .unwrap_or_else(|| default_tree_output_path(&command.root));
     write_output(Some(output_path), &output)
+}
+
+fn warn_about_secrets(snapshot: &Snapshot, max_size: u64, options: &ContentOptions) {
+    let findings = scan_snapshot_for_secrets(snapshot, max_size, options);
+    if findings.is_empty() {
+        return;
+    }
+
+    eprintln!(
+        "Warning: {} potential secret{} detected in content about to be exported:",
+        findings.len(),
+        if findings.len() == 1 { "" } else { "s" }
+    );
+    for SecretFinding { path, line, kind } in findings {
+        eprintln!("  {}:{} — {}", path.display(), line, kind);
+    }
+    eprintln!(
+        "Review the files or exclude them with --exclude. Use --no-secret-scan to disable this warning."
+    );
 }
 
 fn default_tree_output_path(root: &Path) -> PathBuf {

@@ -162,6 +162,7 @@ dependencies = [
  "ignore",
  "infer",
  "mime_guess",
+ "regex",
  "tiktoken-rs",
 ]
 

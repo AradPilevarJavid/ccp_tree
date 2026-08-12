@@ -124,6 +124,10 @@ pub struct Cli {
     /// Suppress non-essential messages
     #[arg(long, short)]
     pub quiet: bool,
+
+    /// Disable warnings for potential credentials in exported file contents
+    #[arg(long)]
+    pub no_secret_scan: bool,
 }
 
 #[derive(Subcommand)]
@@ -245,4 +249,8 @@ pub struct ReverseCommand {
     /// Suppress non-essential messages
     #[arg(long, short)]
     pub quiet: bool,
+
+    /// Disable warnings for potential credentials in exported file contents
+    #[arg(long)]
+    pub no_secret_scan: bool,
 }

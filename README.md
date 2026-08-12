@@ -75,11 +75,10 @@ To read the main page without creating files:
 cargo run --quiet --bin ccp-mangen -- --stdout | man -l -
 ```
 
-If `man` is unavailable, pipe the rendered page through `groff`, or inspect the
-generated roff source with `less`:
+If `man` is unavailable, render the page with `groff` and read it with `less`:
 
 ```bash
-less target/man/ccp.1
+groff -man -Tutf8 target/man/ccp.1 | less -R
 ```
 
 Run `ccp-mangen --help` for output-directory and stdout options.
@@ -197,6 +196,11 @@ A lightweight, indentation‑based format that describes files and directories.
 - UTF-16 text with a byte-order mark is decoded as text, while NUL bytes and
   suspicious control-byte sequences are treated as binary even when technically
   valid UTF-8.
+- Before exporting file contents, `ccp` warns on stderr when it finds common
+  credential patterns such as private keys, API keys, access tokens, JWTs, or
+  password assignments. Warnings show only the file, line, and credential type;
+  matched values are never printed. Use `--exclude` to omit affected files or
+  `--no-secret-scan` to disable the warning.
 
 ### Example
 
@@ -416,7 +420,7 @@ some of these are already partly done.
 - [x] Estimate LLM token count for generated output
 - [ ] Support XML output format
 - [ ] Add configuration file support (`.ccprc` / `ccp.toml`)
-- [ ] Detect and warn about potential secrets before exporting
+- [x] Detect and warn about potential secrets before exporting
 - [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
 - [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw

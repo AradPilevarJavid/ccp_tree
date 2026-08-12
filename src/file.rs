@@ -186,6 +186,7 @@ fn is_textual_mime(mime_type: &str) -> bool {
                 | "application/rtf"
                 | "application/xml"
                 | "application/xhtml+xml"
+                | "application/x-x509-ca-cert"
                 | "image/svg+xml"
         )
         || mime_type.ends_with("+json")

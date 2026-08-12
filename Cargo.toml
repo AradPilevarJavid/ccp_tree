@@ -23,6 +23,7 @@ arboard = { version = "3.3", optional = true }
 tiktoken-rs = "0.12.0"
 infer = { version = "0.22.0", default-features = false, features = ["alloc"] }
 mime_guess = { version = "2.0.5", default-features = false }
+regex = "1.11"
 
 [[bin]]
 name = "ccp"
