@@ -1,19 +1,42 @@
 # Changelog
 
-## Unreleased
+## [1.0.0] - 2026-08-17
 
-- Added built-in starter templates for C, C++, Go, Java, Node.js, React, Ruby, Rust, TypeScript, and plain HTML/CSS/JavaScript projects.
-- Improved binary detection using MIME signatures and control-byte heuristics, added UTF-16 text decoding, and exposed the MIME detection method in output metadata.
-- Reworked `ccp-mangen` to generate complete main and subcommand man pages, added stdout rendering, and expanded the manual with examples and `.tree` syntax.
-- Added pre-export warnings for common private keys, API keys, tokens, JWTs, and credential assignments without printing matched secret values.
-- Added TOML configuration through local `./.ccprc` and higher-priority global `~/.ccprc` files, with explicit CLI arguments taking final precedence.
-- Added `-t` / `--tokens` to snapshot and reverse modes to count `o200k_base` BPE tokens and exit.
-- Replaced the four-characters-per-token heuristic with complete `o200k_base` tokenization.
-- Added MIME detection and size metadata for binary and oversized files.
-- Added branch, commit hash, and remote URL metadata to Markdown snapshots of Git repositories.
-- Added `--head <LINES>` and `--tail <LINES>` to limit file contents by line count.
-- Changed `-r` into a reverse-direction modifier so `-cr --max-chars <CHARS>` copies content from the end of each file.
-- Kept raw output available through `--raw`.
+### Added
+- **Project statistics** for Markdown and structure output: files, directories, lines, size, and accurate `o200k_base` token count.
+- **Git metadata** in Markdown snapshots: branch, commit hash, and remote URL when inside a Git repository.
+- **Secret scanning** before exporting file contents. Warns about private keys, AWS access keys, GitHub/GitLab tokens, OpenAI/Google/Stripe/Slack keys, JWTs, authorization headers, and credential assignments without printing secret values.
+  - Added `--no-secret-scan` to disable warnings.
+- **MIME-aware binary handling** using content signatures (`infer`) and extension fallback.
+  - Binary and oversized files now include MIME type, detection method, size, and detected extension in output.
+  - Added UTF-16 text decoding with BOM support.
+- **Configuration file support** via local `./.ccprc` and global `~/.ccprc`.
+  - Configurable: templates dir, clipboard, exclusions, max size/chars, head/tail, from-end, tokens, output modes, verbosity, force, and more.
+  - Added `--no-clipboard` flag to override clipboard enabled in config.
+- **Jupyter notebook (.ipynb) rendering** to clean Markdown cells with code, outputs, errors, and rich results.
+- **New built-in templates**: C, C++, Go, Java, Node.js, React, Ruby, Rust, TypeScript, and Web.
+- **Man page generation** via new `ccp-mangen` binary.
+- **Arch Linux AUR package support** with `aur/PKGBUILD`.
+- **Content limiting options**:
+  - `--max-chars <CHARS>` — limit characters per file.
+  - `--head <LINES>` — include only first N lines.
+  - `--tail <LINES>` — include only last N lines.
+- **Token count flag** `-t` / `--tokens` for snapshot and reverse modes.
+
+### Changed
+- `-r` short flag now means `--from-end` (apply character limits from the end of a file). Raw output is available via `--raw`.
+- Markdown snapshots now start with a statistics header followed by the project structure and file contents.
+- `--structure` output now includes statistics.
+- Binary and oversized file markers now contain MIME metadata instead of a generic message.
+- Reverse `.tree` definitions now include MIME metadata for binary/oversized files.
+- Codebase modularized into separate modules for CLI, config, file handling, Git, parser, renderers, scaffolding, secret scanning, statistics, templates, and tree operations.
+- Added `Cargo.lock` for reproducible builds.
+
+### Fixed
+- Raw output no longer conflicts with `-s` when using `--raw` explicitly; validation added for incompatible output modes.
+
+
+
 
 ## [0.1.5]
 

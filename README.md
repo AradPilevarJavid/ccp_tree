@@ -445,6 +445,7 @@ some of these are already partly done.
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [ ] Support XML output format
 - [x] Add global and local `.ccprc` configuration support
+- [ ] make MCP server + make a Claude/AI “Skill” package.
 - [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
 - [ ] Support multiple output formats (`markdown`, `xml`, `json`, `raw`) -> ccp already supports markdown and raw
