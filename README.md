@@ -54,31 +54,65 @@ cargo install ccp --features clipboard
 > On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
 
 
-The Arch package installs `ccp(1)` and separate pages for each subcommand.
-Cargo does not install man pages, but you can generate the complete set locally:
+Man Pages 📚
 
-```bash
+If you install ccp from the AUR package, man pages are installed automatically.
+You can then use:
+bash
+
+man ccp
+man ccp-generate
+man ccp-reverse
+
+Installing man pages after cargo install
+
+Cargo does not install man pages by default. To install them manually:
+
+    Generate the man pages into a temporary directory:
+    bash
+
+    cargo run --release --bin ccp-mangen -- --output-dir /tmp/ccp-man
+
+    Copy the generated pages to a man directory.
+    For a user‑local installation (no sudo required):
+    bash
+
+    mkdir -p ~/.local/share/man/man1
+    cp /tmp/ccp-man/*.1 ~/.local/share/man/man1/
+
+    Make sure man finds them by adding ~/.local/share/man to your MANPATH.
+    Add this line to your ~/.bashrc, ~/.zshrc, or equivalent:
+    bash
+
+    export MANPATH="$HOME/.local/share/man:$MANPATH"
+
+    Then reload your shell or run source ~/.bashrc.
+
+    Test it:
+    bash
+
+    man ccp
+
+For a system‑wide installation (requires sudo):
+bash
+
+sudo cp /tmp/ccp-man/*.1 /usr/local/share/man/man1/
+sudo mandb    # update the man database (optional but recommended)
+
+Viewing man pages without installing
+
+You can also read the main page directly without installing:
+bash
+
+cargo run --quiet --bin ccp-mangen -- --stdout | man -l -
+
+Or generate and open a single file:
+bash
+
 cargo run --release --bin ccp-mangen
 man -l target/man/ccp.1
-```
 
-To read the main page without creating files:
-
-```bash
-cargo run --quiet --bin ccp-mangen -- --stdout | man -l -
-```
-
-If `man` is unavailable, render the page with `groff` and read it with `less`:
-
-```bash
-groff -man -Tutf8 target/man/ccp.1 | less -R
-```
-
-Run `ccp-mangen --help` for output-directory and stdout options.
-
-The binary will be at `./target/release/ccp`.
-
-> 💡 Pro‑tip: try `ccp --help`, `ccp reverse --help` and `ccp generate --help` after installation.
+Run ccp-mangen --help for all output options.
 
 ---
 
