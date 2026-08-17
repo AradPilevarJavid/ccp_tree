@@ -68,50 +68,52 @@ Installing man pages after cargo install
 
 Cargo does not install man pages by default. To install them manually:
 
-    Generate the man pages into a temporary directory:
-    bash
+  Generate the man pages into a temporary directory:
 
-    cargo run --release --bin ccp-mangen -- --output-dir /tmp/ccp-man
-
-    Copy the generated pages to a man directory.
+```
+cargo run --release --bin ccp-mangen -- --output-dir /tmp/ccp-man
+```
+  Copy the generated pages to a man directory.
     For a user‑local installation (no sudo required):
-    bash
+    
+```
+mkdir -p ~/.local/share/man/man1
+```
 
-    mkdir -p ~/.local/share/man/man1
-    cp /tmp/ccp-man/*.1 ~/.local/share/man/man1/
+```
+cp /tmp/ccp-man/*.1 ~/.local/share/man/man1/
+```
 
-    Make sure man finds them by adding ~/.local/share/man to your MANPATH.
-    Add this line to your ~/.bashrc, ~/.zshrc, or equivalent:
-    bash
+Make sure man finds them by adding ~/.local/share/man to your MANPATH.
+Add this line to your ~/.bashrc, ~/.zshrc, or equivalent:
 
-    export MANPATH="$HOME/.local/share/man:$MANPATH"
+```
+export MANPATH="$HOME/.local/share/man:$MANPATH"
+```
+Then reload your shell or run source ~/.bashrc.
 
-    Then reload your shell or run source ~/.bashrc.
-
-    Test it:
-    bash
-
+Test it:
+```
     man ccp
+```
 
 For a system‑wide installation (requires sudo):
-bash
-
+```
 sudo cp /tmp/ccp-man/*.1 /usr/local/share/man/man1/
 sudo mandb    # update the man database (optional but recommended)
+```
 
 Viewing man pages without installing
 
 You can also read the main page directly without installing:
-bash
-
+```
 cargo run --quiet --bin ccp-mangen -- --stdout | man -l -
-
+```
 Or generate and open a single file:
-bash
-
+```
 cargo run --release --bin ccp-mangen
 man -l target/man/ccp.1
-
+```
 Run ccp-mangen --help for all output options.
 
 ---
