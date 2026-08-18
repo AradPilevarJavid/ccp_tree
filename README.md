@@ -49,7 +49,7 @@ This installs the `ccp` binary.
 To enable clipboard support (optional, works out‑of‑the‑box on most systems):
 
 ```bash
-cargo install ccp --features clipboard
+cargo install ccp_tree --features clipboard
 ```
 
 > On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
