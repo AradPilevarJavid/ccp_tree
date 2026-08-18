@@ -38,6 +38,30 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 
 ## Installation 🚀
 
+
+### From Crates.io(Linux/MacOs/windows)
+
+```bash
+cargo install ccp_tree
+```
+
+This installs the `ccp` binary.  
+To enable clipboard support (optional, works out‑of‑the‑box on most systems):
+
+```bash
+cargo install ccp --features clipboard
+```
+
+> On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
+
+
+### Arch 
+```
+yay -S ccp_tree
+```
+
+
+
 ### NixOS
 
 #### Add ccp as a flake input
@@ -75,20 +99,6 @@ outputs = { self, nixpkgs, ... }@inputs: {
 
 Add it to your system packages inside ```environment.systemPackages``` or to your user packages using [home-manager](https://github.com/nix-community/home-manager) by adding it inside of ```home.packages```.
 
-### From Crates.io
-
-```bash
-cargo install ccp_tree
-```
-
-This installs the `ccp` binary.  
-To enable clipboard support (optional, works out‑of‑the‑box on most systems):
-
-```bash
-cargo install ccp --features clipboard
-```
-
-> On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
 
 
 Man Pages 📚
