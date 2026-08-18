@@ -38,6 +38,43 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 
 ## Installation 🚀
 
+### NixOS
+
+#### Add ccp as a flake input
+
+In your system flake's `flake.nix`, add ccp to `inputs`:
+
+```nix
+inputs = {
+  nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  ccp.url = "github:aradpilevarjavid/ccp_tree";
+  ...
+};
+```
+
+#### Import the module in your NixOS configuration
+
+Pass `ccp` through to your modules (e.g. via `specialArgs` if using
+flakes directly, or however your setup threads flake inputs to modules),
+then import it alongside your other modules:
+
+```nix
+outputs = { self, nixpkgs, ... }@inputs: {
+  nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
+    system = "x86_64-linux";
+    modules = [
+      ./configuration.nix
+      inputs.ccp.nixosModules.default
+      # ...your other modules
+    ];
+  };
+};
+```
+
+#### Add the package in your system configuration
+
+Add it to your system packages inside ```environment.systemPackages``` or to your user packages using [home-manager](https://github.com/nix-community/home-manager) by adding it inside of ```home.packages```.
+
 ### From Crates.io
 
 ```bash
