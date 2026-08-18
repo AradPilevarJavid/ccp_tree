@@ -101,67 +101,74 @@ Add it to your system packages inside ```environment.systemPackages``` or to you
 
 
 
-Man Pages 📚
+## Man Pages 📚
 
-If you install ccp from the AUR package, man pages are installed automatically.
-You can then use:
-bash
+`ccp` ships with man pages for the main commands: `ccp`, `ccp-generate`, and `ccp-reverse`.  
+How you get them depends on your installation method.
 
+### Installed via AUR (Arch Linux)
+Man pages are installed automatically – just run:
+
+```bash
 man ccp
 man ccp-generate
 man ccp-reverse
-
-Installing man pages after cargo install
-
-Cargo does not install man pages by default. To install them manually:
-
-  Generate the man pages into a temporary directory:
-
-```
-cargo run --release --bin ccp-mangen -- --output-dir /tmp/ccp-man
-```
-  Copy the generated pages to a man directory.
-    For a user‑local installation (no sudo required):
-    
-```
-mkdir -p ~/.local/share/man/man1
 ```
 
-```
-cp /tmp/ccp-man/*.1 ~/.local/share/man/man1/
-```
+### Installed via `cargo install`
+Cargo does **not** install man pages by default. To install them manually:
 
-Make sure man finds them by adding ~/.local/share/man to your MANPATH.
-Add this line to your ~/.bashrc, ~/.zshrc, or equivalent:
+1. **Generate the man pages** (this uses the `ccp-mangen` binary that comes with the crate):
 
-```
-export MANPATH="$HOME/.local/share/man:$MANPATH"
-```
-Then reload your shell or run source ~/.bashrc.
+   ```bash
+   cargo run --release --bin ccp-mangen -- --output-dir /tmp/ccp-man
+   ```
 
-Test it:
-```
-    man ccp
-```
+2. **Install them for your user** (no `sudo` required):
 
-For a system‑wide installation (requires sudo):
-```
+   ```bash
+   mkdir -p ~/.local/share/man/man1
+   cp /tmp/ccp-man/*.1 ~/.local/share/man/man1/
+   ```
+
+3. **Make `man` aware of the location**. Add this line to your `~/.bashrc`, `~/.zshrc`, or equivalent:
+
+   ```bash
+   export MANPATH="$HOME/.local/share/man:$MANPATH"
+   ```
+
+   Then reload your shell:
+   ```bash
+   source ~/.bashrc   # or ~/.zshrc
+   ```
+
+4. **Test it**:
+   ```bash
+   man ccp
+   ```
+
+### Optional: system‑wide installation (requires `sudo`)
+```bash
 sudo cp /tmp/ccp-man/*.1 /usr/local/share/man/man1/
-sudo mandb    # update the man database (optional but recommended)
+sudo mandb
 ```
 
-Viewing man pages without installing
+### View man pages without installing
+If you just want to read them once, you can pipe directly to `man`:
 
-You can also read the main page directly without installing:
-```
+```bash
 cargo run --quiet --bin ccp-mangen -- --stdout | man -l -
 ```
-Or generate and open a single file:
-```
+
+Or generate a single file and open it:
+```bash
 cargo run --release --bin ccp-mangen
 man -l target/man/ccp.1
 ```
-Run ccp-mangen --help for all output options.
+
+> **Tip:** `ccp-mangen --help` shows all output options (output dir, stdout, etc.).
+
+
 
 ---
 
