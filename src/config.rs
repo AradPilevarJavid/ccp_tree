@@ -163,6 +163,18 @@ pub fn apply_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Res
             set_if_not_cli(matches, "quiet", &mut command.quiet, config.quiet);
             Ok(())
         }
+        Some(Command::Templates(command)) => {
+            let matches = matches
+                .subcommand_matches("templates")
+                .expect("templates matches should exist");
+            set_if_not_cli(
+                matches,
+                "templates_dir",
+                &mut command.templates_dir,
+                config.templates_dir.clone(),
+            );
+            Ok(())
+        }
     }
 }
 

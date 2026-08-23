@@ -473,11 +473,12 @@ ccp ../another-project -s -o structure.md
 
 ## Built‑in Templates 📦
 
-`ccp` ships with starter templates bundled at compile time.
-Check the available ones with a non‑existent name:
+`ccp` ships with starter templates bundled at compile time. List the available
+templates, including custom templates from the local templates directory:
 
 ```bash
-ccp generate --template not-a-template  # error message lists all built‑in templates
+ccp templates
+ccp templates --templates-dir ./my-templates
 ```
 
 Currently included:

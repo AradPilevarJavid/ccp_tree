@@ -2,8 +2,8 @@ use anstream::println as aprintln;
 use anyhow::{Context, Result};
 use ccp_tree::{
     apply_config,
-    cli::{Cli, Command, GenerateCommand, ReverseCommand},
-    create_tree, estimate_tokens, fmt_colored_tree, load_template, nodes_to_entries,
+    cli::{Cli, Command, GenerateCommand, ReverseCommand, TemplatesCommand},
+    create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template, nodes_to_entries,
     parse_tree_definition, render_markdown_with_options, render_raw_with_options,
     render_structure_with_options, render_tree_definition_with_options, scan_snapshot_for_secrets,
     snapshot, ContentOptions, GenerateOptions, SecretFinding, Snapshot, WalkOptions,
@@ -26,8 +26,21 @@ fn main() -> Result<()> {
     match cli.command {
         Some(Command::Generate(command)) | Some(Command::Create(command)) => run_generate(command),
         Some(Command::Reverse(command)) => run_reverse(command),
+        Some(Command::Templates(command)) => run_templates(command),
         None => run_copy(cli),
     }
+}
+
+fn run_templates(command: TemplatesCommand) -> Result<()> {
+    for template in list_templates(&command.templates_dir)? {
+        match template.source {
+            ccp_tree::TemplateSource::Builtin => println!("{} (built-in)", template.name),
+            ccp_tree::TemplateSource::Custom(path) => {
+                println!("{} (custom: {})", template.name, path.display())
+            }
+        }
+    }
+    Ok(())
 }
 
 fn run_copy(cli: Cli) -> Result<()> {
@@ -366,5 +379,21 @@ mod tests {
             panic!("reverse command should parse");
         };
         assert!(command.tokens);
+    }
+
+    #[test]
+    fn templates_subcommand_accepts_custom_directory() {
+        let cli = Cli::try_parse_from([
+            "ccp",
+            "templates",
+            "--templates-dir",
+            "./custom-templates",
+        ])
+        .expect("templates command should parse");
+
+        let Some(Command::Templates(command)) = cli.command else {
+            panic!("templates command should parse");
+        };
+        assert_eq!(command.templates_dir, PathBuf::from("./custom-templates"));
     }
 }

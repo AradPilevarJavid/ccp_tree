@@ -147,6 +147,8 @@ pub enum Command {
     Create(GenerateCommand),
     /// Output a reusable .tree definition for a directory
     Reverse(ReverseCommand),
+    /// List built-in and custom .tree templates
+    Templates(TemplatesCommand),
 }
 
 #[derive(Parser)]
@@ -186,6 +188,13 @@ pub struct GenerateCommand {
     /// Suppress non-essential messages and decline overwrite prompts
     #[arg(long, short)]
     pub quiet: bool,
+}
+
+#[derive(Parser)]
+pub struct TemplatesCommand {
+    /// Directory containing custom .tree templates
+    #[arg(long, default_value = "templates")]
+    pub templates_dir: PathBuf,
 }
 
 #[derive(Parser)]
