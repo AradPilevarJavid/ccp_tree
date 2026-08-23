@@ -115,6 +115,7 @@ mod tests {
         let expected = [
             "c",
             "cpp",
+            "datascience",
             "go",
             "java",
             "node",

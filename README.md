@@ -485,6 +485,7 @@ Currently included:
 
 - Systems: `c`, `cpp`, `rust`
 - Backend and general-purpose: `go`, `java`, `python`, `ruby`
+- Data science: `datascience`
 - JavaScript and web: `node`, `react`, `typescript`, `web`
 
 For example:
