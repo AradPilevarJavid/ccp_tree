@@ -76,7 +76,7 @@ fn compact_help_command(command: ClapCommand) -> ClapCommand {
     command
         .next_line_help(false)
         .term_width(200)
-        .color(ColorChoice::Always)
+        .color(ColorChoice::Auto)
         .styles(Styles::styled())
 }
 
