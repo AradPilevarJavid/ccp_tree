@@ -11,7 +11,7 @@ use ccp_tree::{
 #[cfg(test)]
 use clap::Parser;
 use clap::{
-    builder::styling::Styles, ColorChoice, Command as ClapCommand, CommandFactory, FromArgMatches,
+    Command as ClapCommand, CommandFactory, FromArgMatches,
 };
 use std::env;
 use std::fs;
@@ -20,6 +20,9 @@ use std::path::{Path, PathBuf};
 
 #[cfg(feature = "clipboard")]
 use ccp_tree::set_clipboard;
+
+const COLOR_OPTION: &str = "\x1b[36m";
+const COLOR_RESET: &str = "\x1b[0m";
 
 fn main() -> Result<()> {
     if let Some(command) = help_command_from_args() {
@@ -62,7 +65,11 @@ fn print_compact_help(mut command: ClapCommand) {
     for line in rendered.lines() {
         if let Some((label, description)) = line.trim_start().split_once("  ") {
             if label.starts_with('-') || label.starts_with('[') {
-                println!("  {}: {}", label.trim_end(), description.trim());
+                println!(
+                    "  {COLOR_OPTION}{}{COLOR_RESET}: {}",
+                    label.trim_end(),
+                    description.trim()
+                );
                 continue;
             }
         }
@@ -76,8 +83,6 @@ fn compact_help_command(command: ClapCommand) -> ClapCommand {
     command
         .next_line_help(false)
         .term_width(200)
-        .color(ColorChoice::Auto)
-        .styles(Styles::styled())
 }
 
 fn run_templates(command: TemplatesCommand) -> Result<()> {
