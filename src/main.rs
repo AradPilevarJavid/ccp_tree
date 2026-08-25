@@ -11,8 +11,7 @@ use ccp_tree::{
 #[cfg(test)]
 use clap::Parser;
 use clap::{
-    builder::styling::Styles,
-    Command as ClapCommand, CommandFactory, FromArgMatches,
+    builder::styling::Styles, ColorChoice, Command as ClapCommand, CommandFactory, FromArgMatches,
 };
 use std::env;
 use std::fs;
@@ -77,6 +76,7 @@ fn compact_help_command(command: ClapCommand) -> ClapCommand {
     command
         .next_line_help(false)
         .term_width(200)
+        .color(ColorChoice::Always)
         .styles(Styles::styled())
 }
 
