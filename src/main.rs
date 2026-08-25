@@ -3,14 +3,18 @@ use anyhow::{Context, Result};
 use ccp_tree::{
     apply_config,
     cli::{Cli, Command, GenerateCommand, ReverseCommand, TemplatesCommand},
-    create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template, nodes_to_entries,
-    parse_tree_definition, render_markdown_with_options, render_raw_with_options,
+    create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template,
+    nodes_to_entries, parse_tree_definition, render_markdown_with_options, render_raw_with_options,
     render_structure_with_options, render_tree_definition_with_options, scan_snapshot_for_secrets,
     snapshot, ContentOptions, GenerateOptions, SecretFinding, Snapshot, WalkOptions,
 };
 #[cfg(test)]
 use clap::Parser;
-use clap::{CommandFactory, FromArgMatches};
+use clap::{
+    builder::styling::Styles,
+    Command as ClapCommand, CommandFactory, FromArgMatches,
+};
+use std::env;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
@@ -19,7 +23,11 @@ use std::path::{Path, PathBuf};
 use ccp_tree::set_clipboard;
 
 fn main() -> Result<()> {
-    let matches = Cli::command().get_matches();
+    if let Some(command) = help_command_from_args() {
+        print_compact_help(command);
+        return Ok(());
+    }
+    let matches = compact_help_command(Cli::command()).get_matches();
     let mut cli = Cli::from_arg_matches(&matches)?;
     let config = ccp_tree::load_default_config()?;
     apply_config(&mut cli, &matches, &config)?;
@@ -29,6 +37,47 @@ fn main() -> Result<()> {
         Some(Command::Templates(command)) => run_templates(command),
         None => run_copy(cli),
     }
+}
+
+fn help_command_from_args() -> Option<ClapCommand> {
+    let args = env::args().skip(1).collect::<Vec<_>>();
+    let help_index = args.iter().position(|arg| arg == "--help" || arg == "-h")?;
+    let mut command = Cli::command();
+
+    for arg in args[..help_index]
+        .iter()
+        .filter(|arg| !arg.starts_with('-'))
+    {
+        let subcommand = command
+            .find_subcommand_mut(arg)
+            .map(|subcommand| subcommand.clone())?;
+        command = subcommand;
+    }
+
+    Some(command)
+}
+
+fn print_compact_help(mut command: ClapCommand) {
+    command = compact_help_command(command);
+    let rendered = command.render_help().to_string();
+    for line in rendered.lines() {
+        if let Some((label, description)) = line.trim_start().split_once("  ") {
+            if label.starts_with('-') || label.starts_with('[') {
+                println!("  {}: {}", label.trim_end(), description.trim());
+                continue;
+            }
+        }
+        println!("{line}");
+    }
+}
+
+/// Keep interactive help dense without changing the CLI definition used to
+/// generate the full man pages.
+fn compact_help_command(command: ClapCommand) -> ClapCommand {
+    command
+        .next_line_help(false)
+        .term_width(200)
+        .styles(Styles::styled())
 }
 
 fn run_templates(command: TemplatesCommand) -> Result<()> {
@@ -383,13 +432,9 @@ mod tests {
 
     #[test]
     fn templates_subcommand_accepts_custom_directory() {
-        let cli = Cli::try_parse_from([
-            "ccp",
-            "templates",
-            "--templates-dir",
-            "./custom-templates",
-        ])
-        .expect("templates command should parse");
+        let cli =
+            Cli::try_parse_from(["ccp", "templates", "--templates-dir", "./custom-templates"])
+                .expect("templates command should parse");
 
         let Some(Command::Templates(command)) = cli.command else {
             panic!("templates command should parse");
