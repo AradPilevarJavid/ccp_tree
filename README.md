@@ -245,10 +245,15 @@ ccp create [ROOT] [OPTIONS]        # alias for generate
 ```bash
 ccp                          # scan current directory
 ccp /path/to/project -s      # structure only
+ccp path/to/notebook.ipynb   # snapshot one notebook directly
 ccp -r                       # raw file contents only
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
+
+Notebook files are rendered as Markdown cells, code, outputs, and errors. A
+notebook can be passed directly as the root path, including notebooks saved
+with a UTF-8 byte-order mark.
 
 ### 2. 🔁 Reverse – create a `.tree` template
 

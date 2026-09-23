@@ -1,5 +1,5 @@
 use crate::exclude::{load_default_exclude_patterns, load_ignore_patterns, should_exclude};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use ignore::WalkBuilder;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -54,6 +54,21 @@ pub fn insert_entry(root: &mut BTreeMap<String, Entry>, components: &[String], i
 }
 
 pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
+    if root.is_file() {
+        let parent = root.parent().unwrap_or_else(|| Path::new("."));
+        let name = root
+            .file_name()
+            .context("snapshot file root has no file name")?
+            .to_string_lossy()
+            .into_owned();
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[name], false);
+        return Ok(Snapshot {
+            root: parent.to_path_buf(),
+            tree,
+        });
+    }
+
     let root = root.to_path_buf();
     let root_for_filter = root.clone();
     let include_useless = options.include_useless;
@@ -187,6 +202,7 @@ pub(crate) fn count_dirs(entries: &BTreeMap<String, Entry>) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn tree_render_does_not_append_directory_and_file_counts() {
@@ -203,5 +219,31 @@ mod tests {
         assert!(output.contains("└── src/\n    └── main.rs\n"));
         assert!(!output.contains("directories,"));
         assert!(!output.contains("files\n\n"));
+    }
+
+    #[test]
+    fn snapshot_accepts_a_file_as_the_root() {
+        let root = std::env::temp_dir().join(format!("ccp-file-root-test-{}", std::process::id()));
+        let notebook = root.join("analysis.ipynb");
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&notebook, "{}").expect("notebook should be written");
+
+        let snapshot = snapshot(
+            &notebook,
+            &WalkOptions {
+                include_hidden: false,
+                no_ignore: false,
+                include_useless: false,
+                exclude: Vec::new(),
+                mktree_ignore: true,
+                max_size: 1_000,
+            },
+        )
+        .expect("file root should be accepted");
+
+        assert_eq!(snapshot.root, root);
+        assert!(snapshot.tree.contains_key("analysis.ipynb"));
+
+        fs::remove_dir_all(root).expect("test root should be removed");
     }
 }

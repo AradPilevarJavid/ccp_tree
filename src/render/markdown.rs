@@ -395,4 +395,37 @@ mod tests {
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
     }
+
+    #[test]
+    fn markdown_render_formats_a_notebook_file_root() {
+        let root = std::env::temp_dir().join(format!(
+            "ccp-render-notebook-file-root-test-{}",
+            std::process::id()
+        ));
+        let notebook_path = root.join("analysis.ipynb");
+        let notebook = "\u{feff}{\"cells\":[{\"cell_type\":\"markdown\",\"source\":[\"# Analysis\"]}]}";
+
+        fs::create_dir_all(&root).expect("test root should be created");
+        fs::write(&notebook_path, notebook).expect("notebook should be written");
+
+        let snapshot = crate::tree::snapshot(
+            &notebook_path,
+            &crate::tree::WalkOptions {
+                include_hidden: false,
+                no_ignore: false,
+                include_useless: false,
+                exclude: Vec::new(),
+                mktree_ignore: true,
+                max_size: 10_000,
+            },
+        )
+        .expect("file root should be accepted");
+        let output = render_markdown(&snapshot, 10_000, None);
+
+        assert!(output.contains("- Files: 1"));
+        assert!(output.contains("## Notebook: analysis.ipynb"));
+        assert!(output.contains("### Cell 1 (markdown)\n\n# Analysis"));
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
 }

@@ -23,7 +23,7 @@ pub(crate) fn render_notebook_file(
 }
 
 fn render_notebook(input: &str) -> Result<String> {
-    let notebook: Value = serde_json::from_str(input)?;
+    let notebook: Value = serde_json::from_str(input.trim_start_matches('\u{feff}'))?;
     let cells = notebook
         .get("cells")
         .and_then(Value::as_array)
@@ -262,5 +262,14 @@ mod tests {
         assert!(output.contains("````julia\n```\n````"));
         assert!(output.contains("**Output:**\n\n```\n42\n```"));
         assert!(output.contains("**Output:** [image/png image omitted]"));
+    }
+
+    #[test]
+    fn renders_notebooks_with_a_utf8_bom() {
+        let notebook = "\u{feff}{\"cells\":[{\"cell_type\":\"markdown\",\"source\":[\"# BOM safe\"]}]}";
+
+        let output = render_notebook(notebook).expect("BOM-prefixed notebook should render");
+
+        assert!(output.contains("### Cell 1 (markdown)\n\n# BOM safe"));
     }
 }
