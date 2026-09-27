@@ -4,15 +4,14 @@ use ccp_tree::{
     apply_config,
     cli::{Cli, Command, GenerateCommand, ReverseCommand, TemplatesCommand},
     create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template,
-    nodes_to_entries, parse_tree_definition, render_markdown_with_options, render_raw_with_options,
-    render_structure_with_options, render_tree_definition_with_options, scan_snapshot_for_secrets,
-    snapshot, ContentOptions, GenerateOptions, SecretFinding, Snapshot, WalkOptions,
+    nodes_to_entries, parse_tree_definition, render_markdown_with_options_and_tokens,
+    render_raw_with_options, render_structure_with_options_and_tokens,
+    render_tree_definition_with_options, scan_snapshot_for_secrets, snapshot, ContentOptions,
+    GenerateOptions, SecretFinding, Snapshot, WalkOptions,
 };
 #[cfg(test)]
 use clap::Parser;
-use clap::{
-    Command as ClapCommand, CommandFactory, FromArgMatches,
-};
+use clap::{Command as ClapCommand, CommandFactory, FromArgMatches};
 use std::env;
 use std::fs;
 use std::io::{self, Read};
@@ -80,9 +79,7 @@ fn print_compact_help(mut command: ClapCommand) {
 /// Keep interactive help dense without changing the CLI definition used to
 /// generate the full man pages.
 fn compact_help_command(command: ClapCommand) -> ClapCommand {
-    command
-        .next_line_help(false)
-        .term_width(200)
+    command.next_line_help(false).term_width(200)
 }
 
 fn run_templates(command: TemplatesCommand) -> Result<()> {
@@ -130,9 +127,9 @@ fn run_copy(cli: Cli) -> Result<()> {
     } else if cli.reverse {
         render_tree_definition_with_options(&scan, cli.max_size, cli.no_content, &content_options)
     } else if cli.structure {
-        render_structure_with_options(&scan, cli.max_size, &content_options)
+        render_structure_with_options_and_tokens(&scan, cli.max_size, &content_options, cli.tokens)
     } else {
-        render_markdown_with_options(&scan, cli.max_size, &content_options)
+        render_markdown_with_options_and_tokens(&scan, cli.max_size, &content_options, cli.tokens)
     };
 
     if cli.tokens {

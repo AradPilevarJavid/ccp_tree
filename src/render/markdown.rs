@@ -6,20 +6,28 @@ use crate::stats::{
 };
 use crate::tree::{collect_files, fmt_tree_with_root, Snapshot};
 
-fn render_markdown_stats(stats: &ProjectStats, git_metadata: Option<&GitMetadata>) -> String {
+fn render_markdown_stats(
+    stats: &ProjectStats,
+    git_metadata: Option<&GitMetadata>,
+    include_tokens: bool,
+) -> String {
     let mut output = format!(
         "# Project Statistics\n\
          - Files: {}\n\
          - Directories: {}\n\
          - Total lines: {}\n\
-         - Total size: {}\n\
-         - Tokens (o200k_base): {}\n",
+         - Total size: {}\n",
         format_count(stats.files),
         format_count(stats.dirs),
         format_count(stats.lines),
         format_size(stats.size),
-        format_count(stats.estimated_tokens),
     );
+    if include_tokens {
+        output.push_str(&format!(
+            "- Tokens (o200k_base): {}\n",
+            format_count(stats.estimated_tokens)
+        ));
+    }
     if let Some(metadata) = git_metadata {
         if let Some(branch) = &metadata.branch {
             output.push_str(&format!("- Git branch: {branch}\n"));
@@ -35,10 +43,19 @@ fn render_markdown_stats(stats: &ProjectStats, git_metadata: Option<&GitMetadata
     output
 }
 
-fn prepend_stats<F>(mut stats: ProjectStats, body: &str, render_stats: F) -> String
+fn prepend_stats<F>(
+    mut stats: ProjectStats,
+    body: &str,
+    include_tokens: bool,
+    render_stats: F,
+) -> String
 where
     F: Fn(&ProjectStats) -> String,
 {
+    if !include_tokens {
+        return format!("{}{body}", render_stats(&stats));
+    }
+
     for _ in 0..10 {
         let summary = render_stats(&stats);
         let output = format!("{summary}{body}");
@@ -68,6 +85,15 @@ pub fn render_markdown_with_options(
     snapshot: &Snapshot,
     max_size: u64,
     options: &ContentOptions,
+) -> String {
+    render_markdown_with_options_and_tokens(snapshot, max_size, options, false)
+}
+
+pub fn render_markdown_with_options_and_tokens(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    include_tokens: bool,
 ) -> String {
     let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let tree_fence = markdown_fence_for(&tree_str);
@@ -100,8 +126,8 @@ pub fn render_markdown_with_options(
 
     let stats = compute_stats_with_options(snapshot, max_size, options);
     let git_metadata = detect_git_metadata(&snapshot.root);
-    prepend_stats(stats, &body, |stats| {
-        render_markdown_stats(stats, git_metadata.as_ref())
+    prepend_stats(stats, &body, include_tokens, |stats| {
+        render_markdown_stats(stats, git_metadata.as_ref(), include_tokens)
     })
 }
 
@@ -158,13 +184,22 @@ pub fn render_structure_with_options(
     max_size: u64,
     options: &ContentOptions,
 ) -> String {
+    render_structure_with_options_and_tokens(snapshot, max_size, options, false)
+}
+
+pub fn render_structure_with_options_and_tokens(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    include_tokens: bool,
+) -> String {
     let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let fence = markdown_fence_for(&tree_str);
     let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
     let stats = compute_stats_with_options(snapshot, max_size, options);
     let git_metadata = detect_git_metadata(&snapshot.root);
-    prepend_stats(stats, &body, |stats| {
-        render_markdown_stats(stats, git_metadata.as_ref())
+    prepend_stats(stats, &body, include_tokens, |stats| {
+        render_markdown_stats(stats, git_metadata.as_ref(), include_tokens)
     })
 }
 
@@ -213,7 +248,7 @@ mod tests {
         };
 
         assert_eq!(
-            render_markdown_stats(&stats, Some(&metadata)),
+            render_markdown_stats(&stats, Some(&metadata), true),
             "# Project Statistics\n\
              - Files: 1\n\
              - Directories: 0\n\
@@ -237,7 +272,7 @@ mod tests {
         };
 
         assert_eq!(
-            render_markdown_stats(&stats, None),
+            render_markdown_stats(&stats, None, true),
             "# Project Statistics\n\
              - Files: 1\n\
              - Directories: 0\n\
@@ -261,7 +296,12 @@ mod tests {
         insert_entry(&mut tree, &[String::from("README.md")], false);
         let snapshot = Snapshot { root, tree };
 
-        let output = render_markdown(&snapshot, 1_000, None);
+        let output = render_markdown_with_options_and_tokens(
+            &snapshot,
+            1_000,
+            &ContentOptions::default(),
+            true,
+        );
 
         assert!(output.starts_with("# Project Statistics"));
         let token_count = output
@@ -276,6 +316,20 @@ mod tests {
         assert!(output.contains("```\nafter\n````\n"));
 
         fs::remove_dir_all(&snapshot.root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn markdown_render_omits_token_count_by_default() {
+        let mut tree = BTreeMap::new();
+        insert_entry(&mut tree, &[String::from("README.md")], false);
+        let snapshot = Snapshot {
+            root: "example-project".into(),
+            tree,
+        };
+
+        let output = render_markdown(&snapshot, 1_000, None);
+
+        assert!(!output.contains("Tokens (o200k_base)"));
     }
 
     #[test]
@@ -403,7 +457,8 @@ mod tests {
             std::process::id()
         ));
         let notebook_path = root.join("analysis.ipynb");
-        let notebook = "\u{feff}{\"cells\":[{\"cell_type\":\"markdown\",\"source\":[\"# Analysis\"]}]}";
+        let notebook =
+            "\u{feff}{\"cells\":[{\"cell_type\":\"markdown\",\"source\":[\"# Analysis\"]}]}";
 
         fs::create_dir_all(&root).expect("test root should be created");
         fs::write(&notebook_path, notebook).expect("notebook should be written");

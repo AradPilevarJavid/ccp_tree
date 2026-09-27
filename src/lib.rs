@@ -29,8 +29,9 @@ pub use file::{
 pub use git::{detect_git_metadata, GitMetadata};
 pub use parser::{nodes_to_entries, parse_tree_definition, TreeNode};
 pub use render::{
-    fmt_colored_tree, render_markdown, render_markdown_with_options, render_raw,
-    render_raw_with_options, render_structure, render_structure_with_options,
+    fmt_colored_tree, render_markdown, render_markdown_with_options,
+    render_markdown_with_options_and_tokens, render_raw, render_raw_with_options, render_structure,
+    render_structure_with_options, render_structure_with_options_and_tokens,
     render_tree_definition, render_tree_definition_with_options,
 };
 pub use scaffold::{create_tree, GenerateEvent, GenerateOptions};

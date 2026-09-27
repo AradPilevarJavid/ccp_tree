@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0] - 2026-09-27
+
+### Changed
+- Tokenization is opt-in and only runs when `-t` / `--tokens` is provided.
+- Normal snapshot and structure output no longer computes or displays token counts.
+- Configuration files can no longer enable tokenization implicitly.
+
 ## [1.0.0] - 2026-08-17
 
 ### Added

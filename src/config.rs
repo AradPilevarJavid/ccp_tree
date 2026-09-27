@@ -110,7 +110,6 @@ pub fn apply_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Res
                 }
             }
             set_if_not_cli(matches, "from_end", &mut command.from_end, config.from_end);
-            set_if_not_cli(matches, "tokens", &mut command.tokens, config.tokens);
             set_if_not_cli(
                 matches,
                 "no_content",
@@ -200,7 +199,6 @@ fn apply_copy_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Re
         }
     }
     set_if_not_cli(matches, "from_end", &mut cli.from_end, config.from_end);
-    set_if_not_cli(matches, "tokens", &mut cli.tokens, config.tokens);
     set_if_not_cli(
         matches,
         "no_content",
@@ -364,7 +362,6 @@ impl Config {
             head,
             tail,
             from_end,
-            tokens,
             no_content,
             structure,
             reverse,

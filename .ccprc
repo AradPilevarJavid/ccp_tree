@@ -12,7 +12,6 @@
 # head = 200
 # tail = 200
 # from_end = false
-# tokens = false
 # no_content = false
 # structure = false
 # reverse = false

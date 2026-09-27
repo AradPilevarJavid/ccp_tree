@@ -200,7 +200,7 @@ Relative `templates_dir` paths are resolved from the directory containing the
 array instead of being appended.
 
 Most reusable flags can be configured, including `include_hidden`, `no_ignore`,
-`all`, `head`, `tail`, `from_end`, `tokens`, `no_content`, `structure`,
+`all`, `head`, `tail`, `from_end`, `no_content`, `structure`,
 `reverse`, `raw`, `dry_run`, `verbose`, `quiet`, and `force`.
 
 If `clipboard = true`, use `--no-clipboard` for a single command that should
