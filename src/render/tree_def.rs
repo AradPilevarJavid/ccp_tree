@@ -1,5 +1,5 @@
 use crate::file::{
-    format_bytes, format_metadata, inspect_file_with_options, is_single_line, ContentOptions,
+    format_bytes, format_metadata, is_single_line, ContentOptions, FileInspectionCache,
     InspectedFile,
 };
 use crate::tree::{Entry, Snapshot};
@@ -29,6 +29,22 @@ pub fn render_tree_definition_with_options(
     no_content: bool,
     options: &ContentOptions,
 ) -> String {
+    render_tree_definition_with_cache(
+        snapshot,
+        max_size,
+        no_content,
+        options,
+        &mut FileInspectionCache::new(),
+    )
+}
+
+pub fn render_tree_definition_with_cache(
+    snapshot: &Snapshot,
+    max_size: u64,
+    no_content: bool,
+    options: &ContentOptions,
+    cache: &mut FileInspectionCache,
+) -> String {
     render_tree_definition_entries(
         &snapshot.tree,
         &snapshot.root,
@@ -36,6 +52,7 @@ pub fn render_tree_definition_with_options(
         max_size,
         no_content,
         options,
+        cache,
     )
 }
 
@@ -46,6 +63,7 @@ fn render_tree_definition_entries(
     max_size: u64,
     no_content: bool,
     options: &ContentOptions,
+    cache: &mut FileInspectionCache,
 ) -> String {
     let mut out = String::new();
     let indent = "  ".repeat(depth);
@@ -60,6 +78,7 @@ fn render_tree_definition_entries(
                 max_size,
                 no_content,
                 options,
+                cache,
             ));
             continue;
         }
@@ -69,7 +88,7 @@ fn render_tree_definition_entries(
             continue;
         }
 
-        match inspect_file_with_options(&child_path, max_size, options) {
+        match cache.inspect(&child_path, max_size, options) {
             Ok(InspectedFile::Text(text)) if text.is_empty() => {
                 out.push_str(&format!("{}{}\n", indent, entry.name))
             }
@@ -96,7 +115,7 @@ fn render_tree_definition_entries(
                 indent,
                 entry.name,
                 format_metadata(&metadata),
-                format_bytes(limit),
+                format_bytes(*limit),
             )),
             Err(error) => out.push_str(&format!("{}{}: <error: {}>\n", indent, entry.name, error)),
         }

@@ -4,9 +4,9 @@ use ccp_tree::{
     apply_config,
     cli::{Cli, Command, GenerateCommand, ReverseCommand, TemplatesCommand},
     create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template,
-    nodes_to_entries, parse_tree_definition, render_markdown_with_options_and_tokens,
-    render_raw_with_options, render_structure_with_options_and_tokens,
-    render_tree_definition_with_options, scan_snapshot_for_secrets, snapshot, ContentOptions,
+    nodes_to_entries, parse_tree_definition, render_markdown_with_cache, render_raw_with_cache,
+    render_structure_with_cache, render_tree_definition_with_cache,
+    scan_snapshot_for_secrets_with_cache, snapshot, ContentOptions, FileInspectionCache,
     GenerateOptions, SecretFinding, Snapshot, WalkOptions,
 };
 #[cfg(test)]
@@ -119,17 +119,36 @@ fn run_copy(cli: Cli) -> Result<()> {
         from_end: cli.from_end,
     };
     let skips_content_export = cli.tokens || cli.structure || cli.reverse && cli.no_content;
+    let mut cache = FileInspectionCache::new();
     if !cli.no_secret_scan && !skips_content_export {
-        warn_about_secrets(&scan, cli.max_size, &content_options);
+        warn_about_secrets(&scan, cli.max_size, &content_options, &mut cache);
     }
     let output = if cli.raw {
-        render_raw_with_options(&scan, cli.max_size, &content_options)
+        render_raw_with_cache(&scan, cli.max_size, &content_options, &mut cache)
     } else if cli.reverse {
-        render_tree_definition_with_options(&scan, cli.max_size, cli.no_content, &content_options)
+        render_tree_definition_with_cache(
+            &scan,
+            cli.max_size,
+            cli.no_content,
+            &content_options,
+            &mut cache,
+        )
     } else if cli.structure {
-        render_structure_with_options_and_tokens(&scan, cli.max_size, &content_options, cli.tokens)
+        render_structure_with_cache(
+            &scan,
+            cli.max_size,
+            &content_options,
+            cli.tokens,
+            &mut cache,
+        )
     } else {
-        render_markdown_with_options_and_tokens(&scan, cli.max_size, &content_options, cli.tokens)
+        render_markdown_with_cache(
+            &scan,
+            cli.max_size,
+            &content_options,
+            cli.tokens,
+            &mut cache,
+        )
     };
 
     if cli.tokens {
@@ -212,14 +231,16 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         tail: command.tail,
         from_end: command.from_end,
     };
+    let mut cache = FileInspectionCache::new();
     if !command.no_secret_scan && !command.tokens && !command.no_content {
-        warn_about_secrets(&scan, command.max_size, &content_options);
+        warn_about_secrets(&scan, command.max_size, &content_options, &mut cache);
     }
-    let output = render_tree_definition_with_options(
+    let output = render_tree_definition_with_cache(
         &scan,
         command.max_size,
         command.no_content,
         &content_options,
+        &mut cache,
     );
 
     if command.tokens {
@@ -247,8 +268,13 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
     write_output(Some(output_path), &output)
 }
 
-fn warn_about_secrets(snapshot: &Snapshot, max_size: u64, options: &ContentOptions) {
-    let findings = scan_snapshot_for_secrets(snapshot, max_size, options);
+fn warn_about_secrets(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    cache: &mut FileInspectionCache,
+) {
+    let findings = scan_snapshot_for_secrets_with_cache(snapshot, max_size, options, cache);
     if findings.is_empty() {
         return;
     }

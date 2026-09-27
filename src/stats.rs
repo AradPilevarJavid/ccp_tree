@@ -1,6 +1,5 @@
-use crate::file::{read_file_text_with_options, ContentOptions, FileText};
+use crate::file::{ContentOptions, FileInspectionCache, InspectedFile};
 use crate::tree::{collect_files, count_dirs, Snapshot};
-use std::fs;
 use tiktoken_rs::o200k_base_singleton;
 
 #[derive(Debug, Clone)]
@@ -28,17 +27,25 @@ pub fn compute_stats_with_options(
     max_size: u64,
     options: &ContentOptions,
 ) -> ProjectStats {
+    compute_stats_with_cache(snapshot, max_size, options, &mut FileInspectionCache::new())
+}
+
+pub fn compute_stats_with_cache(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    cache: &mut FileInspectionCache,
+) -> ProjectStats {
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     let mut lines = 0;
     let mut size = 0;
 
     for path in &file_paths {
-        if let Ok(metadata) = fs::metadata(path) {
-            size += metadata.len();
-        }
-
-        if let Ok(FileText::Text(text)) = read_file_text_with_options(path, max_size, options) {
-            lines += text.lines().count();
+        if let Ok((inspection, file_size)) = cache.inspect_with_size(path, max_size, options) {
+            size += file_size;
+            if let InspectedFile::Text(text) = inspection {
+                lines += text.lines().count();
+            }
         }
     }
 
@@ -92,6 +99,7 @@ mod tests {
     use super::*;
     use crate::tree::{insert_entry, Snapshot};
     use std::collections::BTreeMap;
+    use std::fs;
     use std::path::PathBuf;
 
     #[test]

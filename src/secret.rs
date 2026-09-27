@@ -1,4 +1,4 @@
-use crate::file::{inspect_file_with_options, ContentOptions, InspectedFile};
+use crate::file::{ContentOptions, FileInspectionCache, InspectedFile};
 use crate::tree::{collect_files, Snapshot};
 use regex::Regex;
 use std::path::PathBuf;
@@ -21,11 +21,24 @@ pub fn scan_snapshot_for_secrets(
     max_size: u64,
     options: &ContentOptions,
 ) -> Vec<SecretFinding> {
+    scan_snapshot_for_secrets_with_cache(
+        snapshot,
+        max_size,
+        options,
+        &mut FileInspectionCache::new(),
+    )
+}
+
+pub fn scan_snapshot_for_secrets_with_cache(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    cache: &mut FileInspectionCache,
+) -> Vec<SecretFinding> {
     let mut findings = Vec::new();
 
     for path in collect_files(&snapshot.tree, &snapshot.root) {
-        let Ok(InspectedFile::Text(text)) = inspect_file_with_options(&path, max_size, options)
-        else {
+        let Ok(InspectedFile::Text(text)) = cache.inspect(&path, max_size, options) else {
             continue;
         };
         let relative = path

@@ -23,19 +23,23 @@ pub use exclude::{
 };
 pub use file::{
     file_content, file_content_with_options, inspect_file, inspect_file_with_options,
-    read_file_text, read_file_text_with_options, ContentOptions, FileMetadata, FileText,
-    InspectedFile, MimeDetection,
+    read_file_text, read_file_text_with_options, ContentOptions, FileInspectionCache, FileMetadata,
+    FileText, InspectedFile, MimeDetection,
 };
 pub use git::{detect_git_metadata, GitMetadata};
 pub use parser::{nodes_to_entries, parse_tree_definition, TreeNode};
 pub use render::{
-    fmt_colored_tree, render_markdown, render_markdown_with_options,
-    render_markdown_with_options_and_tokens, render_raw, render_raw_with_options, render_structure,
+    fmt_colored_tree, render_markdown, render_markdown_with_cache, render_markdown_with_options,
+    render_markdown_with_options_and_tokens, render_raw, render_raw_with_cache,
+    render_raw_with_options, render_structure, render_structure_with_cache,
     render_structure_with_options, render_structure_with_options_and_tokens,
-    render_tree_definition, render_tree_definition_with_options,
+    render_tree_definition, render_tree_definition_with_cache, render_tree_definition_with_options,
 };
 pub use scaffold::{create_tree, GenerateEvent, GenerateOptions};
-pub use secret::{scan_snapshot_for_secrets, SecretFinding};
-pub use stats::{compute_stats, compute_stats_with_options, estimate_tokens, ProjectStats};
+pub use secret::{scan_snapshot_for_secrets, scan_snapshot_for_secrets_with_cache, SecretFinding};
+pub use stats::{
+    compute_stats, compute_stats_with_cache, compute_stats_with_options, estimate_tokens,
+    ProjectStats,
+};
 pub use template::{list_templates, load_template, AvailableTemplate, TemplateSource};
 pub use tree::{collect_files, fmt_tree, insert_entry, snapshot, Entry, Snapshot, WalkOptions};

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1] - 2026-09-27
+
+### Changed
+- Reuse inspected file contents across secret scanning, statistics, and rendering.
+- Reduce repeated file reads and metadata lookups during snapshot generation.
+
 ## [1.1.0] - 2026-09-27
 
 ### Changed

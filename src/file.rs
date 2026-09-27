@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
@@ -36,12 +37,67 @@ pub enum InspectedFile {
     TooLarge { metadata: FileMetadata, limit: u64 },
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq)]
 pub struct ContentOptions {
     pub max_chars: Option<u64>,
     pub head: Option<usize>,
     pub tail: Option<usize>,
     pub from_end: bool,
+}
+
+/// Content inspections shared by the operations making up one command.
+#[derive(Debug, Default)]
+pub struct FileInspectionCache {
+    entries: HashMap<(std::path::PathBuf, u64, ContentOptions), CachedInspection>,
+}
+
+#[derive(Debug)]
+struct CachedInspection {
+    file: InspectedFile,
+    size: u64,
+}
+
+impl FileInspectionCache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn inspect(
+        &mut self,
+        path: &Path,
+        max_size: u64,
+        options: &ContentOptions,
+    ) -> Result<&InspectedFile> {
+        let key = (path.to_path_buf(), max_size, *options);
+        self.inspect_with_size(path, max_size, options)?;
+        Ok(&self
+            .entries
+            .get(&key)
+            .expect("cache entry was inserted")
+            .file)
+    }
+
+    pub fn inspect_with_size(
+        &mut self,
+        path: &Path,
+        max_size: u64,
+        options: &ContentOptions,
+    ) -> Result<(&InspectedFile, u64)> {
+        let key = (path.to_path_buf(), max_size, *options);
+        if !self.entries.contains_key(&key) {
+            let metadata = fs::metadata(path)?;
+            let file = inspect_file_with_metadata(path, max_size, options, &metadata)?;
+            self.entries.insert(
+                key.clone(),
+                CachedInspection {
+                    file,
+                    size: metadata.len(),
+                },
+            );
+        }
+        let cached = self.entries.get(&key).expect("cache entry was inserted");
+        Ok((&cached.file, cached.size))
+    }
 }
 
 pub fn read_file_text(path: &Path, max_size: u64, max_chars: Option<u64>) -> Result<FileText> {
@@ -84,6 +140,15 @@ pub fn inspect_file_with_options(
     options: &ContentOptions,
 ) -> Result<InspectedFile> {
     let metadata = fs::metadata(path)?;
+    inspect_file_with_metadata(path, max_size, options, &metadata)
+}
+
+fn inspect_file_with_metadata(
+    path: &Path,
+    max_size: u64,
+    options: &ContentOptions,
+    metadata: &fs::Metadata,
+) -> Result<InspectedFile> {
     if metadata.len() > max_size {
         let mut bytes = Vec::new();
         File::open(path)?
@@ -404,6 +469,26 @@ mod tests {
         );
 
         assert_eq!(text, "[truncated to last 3 characters]\ndef");
+    }
+
+    #[test]
+    fn inspection_cache_reuses_an_inspection() {
+        let path = std::env::temp_dir().join(format!("ccp-cache-test-{}", std::process::id()));
+        fs::write(&path, "before").expect("test file should be written");
+        let options = ContentOptions::default();
+        let mut cache = FileInspectionCache::new();
+
+        assert!(matches!(
+            cache.inspect(&path, 1_000, &options).unwrap(),
+            InspectedFile::Text(text) if text == "before"
+        ));
+        fs::write(&path, "after").expect("test file should be rewritten");
+        assert!(matches!(
+            cache.inspect(&path, 1_000, &options).unwrap(),
+            InspectedFile::Text(text) if text == "before"
+        ));
+
+        fs::remove_file(path).expect("test file should be removed");
     }
 
     #[test]

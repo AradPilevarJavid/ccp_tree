@@ -1,10 +1,14 @@
-use crate::file::{file_content_with_options, markdown_fence_for, ContentOptions};
+use crate::file::{
+    format_bytes, format_metadata, markdown_fence_for, ContentOptions, FileInspectionCache,
+    InspectedFile,
+};
 use crate::git::{detect_git_metadata, GitMetadata};
 use crate::render::notebook::render_notebook_file;
 use crate::stats::{
-    compute_stats_with_options, estimate_tokens, format_count, format_size, ProjectStats,
+    compute_stats_with_cache, estimate_tokens, format_count, format_size, ProjectStats,
 };
 use crate::tree::{collect_files, fmt_tree_with_root, Snapshot};
+use std::borrow::Cow;
 
 fn render_markdown_stats(
     stats: &ProjectStats,
@@ -95,6 +99,22 @@ pub fn render_markdown_with_options_and_tokens(
     options: &ContentOptions,
     include_tokens: bool,
 ) -> String {
+    render_markdown_with_cache(
+        snapshot,
+        max_size,
+        options,
+        include_tokens,
+        &mut FileInspectionCache::new(),
+    )
+}
+
+pub fn render_markdown_with_cache(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    include_tokens: bool,
+    cache: &mut FileInspectionCache,
+) -> String {
     let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
     let tree_fence = markdown_fence_for(&tree_str);
     let mut body = format!("# Project Structure\n\n{tree_fence}\n{tree_str}{tree_fence}\n");
@@ -107,16 +127,25 @@ pub fn render_markdown_with_options_and_tokens(
             .and_then(|extension| extension.to_str())
             .is_some_and(|extension| extension.eq_ignore_ascii_case("ipynb"));
         if is_notebook {
-            if let Ok(Some(content)) = render_notebook_file(path, max_size, options) {
+            if let Ok(Some(content)) = render_notebook_file(path, max_size, options, cache) {
                 body.push_str(&format!("\n## Notebook: {}\n\n", relative.display()));
                 body.push_str(&content);
                 body.push('\n');
                 continue;
             }
         }
-        let content = match file_content_with_options(path, max_size, options) {
-            Ok(content) => content,
-            Err(error) => format!("[Error reading file: {}]", error),
+        let content = match cache.inspect(path, max_size, options) {
+            Ok(InspectedFile::Text(content)) => Cow::Borrowed(content.as_str()),
+            Ok(InspectedFile::Binary(metadata)) => Cow::Owned(format!(
+                "[Binary file not shown; {}]",
+                format_metadata(metadata)
+            )),
+            Ok(InspectedFile::TooLarge { metadata, limit }) => Cow::Owned(format!(
+                "[File too large; {}; limit: {}]",
+                format_metadata(metadata),
+                format_bytes(*limit)
+            )),
+            Err(error) => Cow::Owned(format!("[Error reading file: {}]", error)),
         };
         let fence = markdown_fence_for(&content);
         body.push_str(&format!("\n## {}\n\n{fence}\n", relative.display()));
@@ -124,7 +153,7 @@ pub fn render_markdown_with_options_and_tokens(
         body.push_str(&format!("\n{fence}\n"));
     }
 
-    let stats = compute_stats_with_options(snapshot, max_size, options);
+    let stats = compute_stats_with_cache(snapshot, max_size, options, cache);
     let git_metadata = detect_git_metadata(&snapshot.root);
     prepend_stats(stats, &body, include_tokens, |stats| {
         render_markdown_stats(stats, git_metadata.as_ref(), include_tokens)
@@ -147,15 +176,36 @@ pub fn render_raw_with_options(
     max_size: u64,
     options: &ContentOptions,
 ) -> String {
+    render_raw_with_cache(snapshot, max_size, options, &mut FileInspectionCache::new())
+}
+
+pub fn render_raw_with_cache(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    cache: &mut FileInspectionCache,
+) -> String {
     let file_paths = collect_files(&snapshot.tree, &snapshot.root);
     let mut body = String::new();
     for (index, path) in file_paths.iter().enumerate() {
         let relative = path.strip_prefix(&snapshot.root).unwrap_or(path);
-        let content = match file_content_with_options(path, max_size, options) {
-            Ok(content) => content,
-            Err(error) => format!("[Error reading file: {}]", error),
+        let content = match cache.inspect(path, max_size, options) {
+            Ok(InspectedFile::Text(content)) => Cow::Borrowed(content.as_str()),
+            Ok(InspectedFile::Binary(metadata)) => Cow::Owned(format!(
+                "[Binary file not shown; {}]",
+                format_metadata(metadata)
+            )),
+            Ok(InspectedFile::TooLarge { metadata, limit }) => Cow::Owned(format!(
+                "[File too large; {}; limit: {}]",
+                format_metadata(metadata),
+                format_bytes(*limit)
+            )),
+            Err(error) => Cow::Owned(format!("[Error reading file: {}]", error)),
         };
-        body.push_str(&format!("==== {} ====\n", relative.display()));
+        body.push_str(&format!(
+            "==== {} ====\n",
+            relative.display().to_string().replace('\\', "/")
+        ));
         body.push_str(&content);
         if !content.ends_with('\n') {
             body.push('\n');
@@ -187,20 +237,36 @@ pub fn render_structure_with_options(
     render_structure_with_options_and_tokens(snapshot, max_size, options, false)
 }
 
+pub fn render_structure_with_cache(
+    snapshot: &Snapshot,
+    max_size: u64,
+    options: &ContentOptions,
+    include_tokens: bool,
+    cache: &mut FileInspectionCache,
+) -> String {
+    let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
+    let fence = markdown_fence_for(&tree_str);
+    let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
+    let stats = compute_stats_with_cache(snapshot, max_size, options, cache);
+    let git_metadata = detect_git_metadata(&snapshot.root);
+    prepend_stats(stats, &body, include_tokens, |stats| {
+        render_markdown_stats(stats, git_metadata.as_ref(), include_tokens)
+    })
+}
+
 pub fn render_structure_with_options_and_tokens(
     snapshot: &Snapshot,
     max_size: u64,
     options: &ContentOptions,
     include_tokens: bool,
 ) -> String {
-    let tree_str = fmt_tree_with_root(&snapshot.root, &snapshot.tree);
-    let fence = markdown_fence_for(&tree_str);
-    let body = format!("# Project Structure\n\n{fence}\n{tree_str}{fence}\n");
-    let stats = compute_stats_with_options(snapshot, max_size, options);
-    let git_metadata = detect_git_metadata(&snapshot.root);
-    prepend_stats(stats, &body, include_tokens, |stats| {
-        render_markdown_stats(stats, git_metadata.as_ref(), include_tokens)
-    })
+    render_structure_with_cache(
+        snapshot,
+        max_size,
+        options,
+        include_tokens,
+        &mut FileInspectionCache::new(),
+    )
 }
 
 #[cfg(test)]

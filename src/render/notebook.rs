@@ -1,6 +1,5 @@
 use crate::file::{
-    apply_content_options, inspect_file_with_options, markdown_fence_for, ContentOptions,
-    InspectedFile,
+    apply_content_options, markdown_fence_for, ContentOptions, FileInspectionCache, InspectedFile,
 };
 use anyhow::{Context, Result};
 use regex::Regex;
@@ -11,9 +10,10 @@ pub(crate) fn render_notebook_file(
     path: &Path,
     max_size: u64,
     options: &ContentOptions,
+    cache: &mut FileInspectionCache,
 ) -> Result<Option<String>> {
     let inspection_options = ContentOptions::default();
-    let text = match inspect_file_with_options(path, max_size, &inspection_options)? {
+    let text = match cache.inspect(path, max_size, &inspection_options)? {
         InspectedFile::Text(text) => text,
         InspectedFile::Binary(_) | InspectedFile::TooLarge { .. } => return Ok(None),
     };
@@ -266,7 +266,8 @@ mod tests {
 
     #[test]
     fn renders_notebooks_with_a_utf8_bom() {
-        let notebook = "\u{feff}{\"cells\":[{\"cell_type\":\"markdown\",\"source\":[\"# BOM safe\"]}]}";
+        let notebook =
+            "\u{feff}{\"cells\":[{\"cell_type\":\"markdown\",\"source\":[\"# BOM safe\"]}]}";
 
         let output = render_notebook(notebook).expect("BOM-prefixed notebook should render");
 
