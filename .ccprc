@@ -19,5 +19,5 @@
 # dry_run = false
 # verbose = false
 # quiet = false
-# no_secret_scan = false
+# security_scan = false
 # force = false

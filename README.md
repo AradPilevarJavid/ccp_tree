@@ -191,7 +191,7 @@ clipboard = true
 max_size = 1048576
 max_chars = 12000
 exclude = ["*.generated", "secrets/"]
-no_secret_scan = false
+security_scan = false
 quiet = false
 ```
 
@@ -201,7 +201,7 @@ array instead of being appended.
 
 Most reusable flags can be configured, including `include_hidden`, `no_ignore`,
 `all`, `head`, `tail`, `from_end`, `no_content`, `structure`,
-`reverse`, `raw`, `dry_run`, `verbose`, `quiet`, and `force`.
+`reverse`, `raw`, `dry_run`, `verbose`, `quiet`, `security_scan`, and `force`.
 
 If `clipboard = true`, use `--no-clipboard` for a single command that should
 print or write normally instead.
@@ -323,11 +323,11 @@ A lightweight, indentation‑based format that describes files and directories.
 - UTF-16 text with a byte-order mark is decoded as text, while NUL bytes and
   suspicious control-byte sequences are treated as binary even when technically
   valid UTF-8.
-- Before exporting file contents, `ccp` warns on stderr when it finds common
+- With `--security-scan`, `ccp` warns on stderr when it finds common
   credential patterns such as private keys, API keys, access tokens, JWTs, or
   password assignments. Warnings show only the file, line, and credential type;
-  matched values are never printed. Use `--exclude` to omit affected files or
-  `--no-secret-scan` to disable the warning.
+  matched values are never printed. Security analysis is disabled by default;
+  use `--exclude` to omit affected files.
 
 ### Example
 
@@ -371,6 +371,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--raw`, `-r`               | Output raw file contents only; cannot be combined with `-s`. |
 | `--reverse`                 | Output in `.tree` definition format. |
 | `--no-content`              | Omit file contents in `.tree` output. |
+| `--security-scan`           | Analyze exported file contents for potential credentials. |
 | `--dry-run`                 | Preview the tree (colored) without writing. |
 | `--verbose`, `-v`           | Print extra progress info. |
 | `--quiet`, `-q`             | Suppress non‑essential output. |
@@ -405,6 +406,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--max-size <BYTES>`         | Skip files larger than this size (default: 1 MB). |
 | `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
 | `--no-content`               | Omit file contents in the `.tree` output. |
+| `--security-scan`            | Analyze exported file contents for potential credentials. |
 | `--dry-run`                  | Preview the tree (colored) without writing. |
 | `--verbose`, `-v`            | Print extra progress info. |
 | `--quiet`, `-q`              | Suppress non‑essential output. |

@@ -30,7 +30,7 @@ pub struct Config {
     pub dry_run: Option<bool>,
     pub verbose: Option<bool>,
     pub quiet: Option<bool>,
-    pub no_secret_scan: Option<bool>,
+    pub security_scan: Option<bool>,
     pub force: Option<bool>,
 }
 
@@ -121,9 +121,9 @@ pub fn apply_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Res
             set_if_not_cli(matches, "quiet", &mut command.quiet, config.quiet);
             set_if_not_cli(
                 matches,
-                "no_secret_scan",
-                &mut command.no_secret_scan,
-                config.no_secret_scan,
+                "security_scan",
+                &mut command.security_scan,
+                config.security_scan,
             );
             #[cfg(feature = "clipboard")]
             apply_clipboard_config(
@@ -224,9 +224,9 @@ fn apply_copy_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Re
     set_if_not_cli(matches, "quiet", &mut cli.quiet, config.quiet);
     set_if_not_cli(
         matches,
-        "no_secret_scan",
-        &mut cli.no_secret_scan,
-        config.no_secret_scan,
+        "security_scan",
+        &mut cli.security_scan,
+        config.security_scan,
     );
     #[cfg(feature = "clipboard")]
     apply_clipboard_config(
@@ -369,7 +369,7 @@ impl Config {
             dry_run,
             verbose,
             quiet,
-            no_secret_scan,
+            security_scan,
             force,
         );
     }

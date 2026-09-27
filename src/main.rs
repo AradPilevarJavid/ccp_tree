@@ -120,7 +120,7 @@ fn run_copy(cli: Cli) -> Result<()> {
     };
     let skips_content_export = cli.tokens || cli.structure || cli.reverse && cli.no_content;
     let mut cache = FileInspectionCache::new();
-    if !cli.no_secret_scan && !skips_content_export {
+    if cli.security_scan && !skips_content_export {
         warn_about_secrets(&scan, cli.max_size, &content_options, &mut cache);
     }
     let output = if cli.raw {
@@ -232,7 +232,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         from_end: command.from_end,
     };
     let mut cache = FileInspectionCache::new();
-    if !command.no_secret_scan && !command.tokens && !command.no_content {
+    if command.security_scan && !command.tokens && !command.no_content {
         warn_about_secrets(&scan, command.max_size, &content_options, &mut cache);
     }
     let output = render_tree_definition_with_cache(
@@ -288,7 +288,7 @@ fn warn_about_secrets(
         eprintln!("  {}:{} — {}", path.display(), line, kind);
     }
     eprintln!(
-        "Review the files or exclude them with --exclude. Use --no-secret-scan to disable this warning."
+        "Review the files or exclude them with --exclude. Security analysis is opt-in via --security-scan."
     );
 }
 
@@ -456,6 +456,25 @@ mod tests {
             panic!("reverse command should parse");
         };
         assert!(command.tokens);
+    }
+
+    #[test]
+    fn security_scan_is_opt_in_for_snapshot() {
+        let cli = Cli::try_parse_from(["ccp", "--security-scan"])
+            .expect("--security-scan should parse");
+
+        assert!(cli.security_scan);
+    }
+
+    #[test]
+    fn security_scan_is_opt_in_for_reverse_subcommand() {
+        let cli = Cli::try_parse_from(["ccp", "reverse", "--security-scan"])
+            .expect("--security-scan should parse");
+
+        let Some(Command::Reverse(command)) = cli.command else {
+            panic!("reverse command should parse");
+        };
+        assert!(command.security_scan);
     }
 
     #[test]

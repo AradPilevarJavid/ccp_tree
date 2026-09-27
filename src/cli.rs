@@ -98,9 +98,9 @@ pub struct Cli {
     #[arg(long, short)]
     pub quiet: bool,
 
-    /// Disable warnings for potential credentials in exported file contents
+    /// Analyze exported file contents for potential credentials
     #[arg(long)]
-    pub no_secret_scan: bool,
+    pub security_scan: bool,
 }
 
 #[derive(Subcommand)]
@@ -237,7 +237,7 @@ pub struct ReverseCommand {
     #[arg(long, short)]
     pub quiet: bool,
 
-    /// Disable warnings for potential credentials in exported file contents
+    /// Analyze exported file contents for potential credentials
     #[arg(long)]
-    pub no_secret_scan: bool,
+    pub security_scan: bool,
 }
