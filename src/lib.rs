@@ -10,6 +10,7 @@ pub mod secret;
 pub mod stats;
 pub mod template;
 pub mod tree;
+pub mod update;
 
 #[cfg(feature = "clipboard")]
 pub mod clipboard;

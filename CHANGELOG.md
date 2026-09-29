@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3] - 2026-09-29
+
+### Added
+- Automatic best-effort update notifications from crates.io.
+- `ccp update` to install the latest release with Cargo.
+
 ## [1.1.2] - 2026-09-27
 
 ### Changed

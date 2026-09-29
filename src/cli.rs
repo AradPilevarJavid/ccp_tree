@@ -105,6 +105,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
+    /// Install the latest version from crates.io
+    Update,
     /// Create files and directories from an indented .tree definition
     Generate(GenerateCommand),
     /// Alias for generate

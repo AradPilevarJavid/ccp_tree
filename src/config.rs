@@ -174,6 +174,7 @@ pub fn apply_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Res
             );
             Ok(())
         }
+        Some(Command::Update) => Ok(()),
     }
 }
 

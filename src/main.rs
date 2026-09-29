@@ -1,5 +1,6 @@
 use anstream::println as aprintln;
 use anyhow::{Context, Result};
+use ccp_tree::update;
 use ccp_tree::{
     apply_config,
     cli::{Cli, Command, GenerateCommand, ReverseCommand, TemplatesCommand},
@@ -16,6 +17,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+use std::process::Command as ProcessCommand;
 
 #[cfg(feature = "clipboard")]
 use ccp_tree::set_clipboard;
@@ -32,12 +34,30 @@ fn main() -> Result<()> {
     let mut cli = Cli::from_arg_matches(&matches)?;
     let config = ccp_tree::load_default_config()?;
     apply_config(&mut cli, &matches, &config)?;
+    if !matches!(cli.command, Some(Command::Update)) {
+        update::notify_if_available();
+    }
     match cli.command {
+        Some(Command::Update) => run_update(),
         Some(Command::Generate(command)) | Some(Command::Create(command)) => run_generate(command),
         Some(Command::Reverse(command)) => run_reverse(command),
         Some(Command::Templates(command)) => run_templates(command),
         None => run_copy(cli),
     }
+}
+
+fn run_update() -> Result<()> {
+    let status = ProcessCommand::new("cargo")
+        .args(["install", "ccp_tree", "--force"])
+        .status()
+        .context("failed to start cargo; ensure Rust and Cargo are installed")?;
+
+    if !status.success() {
+        anyhow::bail!("cargo install ccp_tree --force failed with status {status}");
+    }
+
+    println!("ccp_tree was updated successfully.");
+    Ok(())
 }
 
 fn help_command_from_args() -> Option<ClapCommand> {

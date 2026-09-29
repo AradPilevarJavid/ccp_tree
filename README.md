@@ -45,6 +45,16 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 cargo install ccp_tree
 ```
 
+Check for a newer release at any time and install it with:
+
+```bash
+ccp update
+```
+
+When a newer version is available, normal `ccp` commands print a
+non-blocking notification with the `ccp update` command. The check uses
+crates.io and does not prevent offline use.
+
 This installs the `ccp` binary.  
 To enable clipboard support (optional, works out‑of‑the‑box on most systems):
 
