@@ -553,7 +553,6 @@ some of these are already partly done.
 - [ ] Implement a button(possibly as a file) that if clicked would function like `ccp -c`.
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [ ] Support XML output format
-- [x] Add global and local `.ccprc` configuration support
 - [ ] make MCP server + make a Claude/AI “Skill” package.
 - [ ] Support scanning remote Git repositories without cloning manually -> I'm not fully sure if this is a great idea but I might end up making it:)
 - [ ] Add Git metadata (branch, commit hash, remote URL) to snapshots
@@ -561,6 +560,28 @@ some of these are already partly done.
 - [ ] Handle files that are too large (more than 1048576 bytes)
 - [ ] Better binary‑file detection and handeling (checksums)
 - [ ] make the --help short and let the manual remain long.
+  * [ ] Add graph traversal engine for finding paths and relationships between project components.
+  * [ ] Add multi-project graph support for connecting related repositories and shared dependencies.
+  * [ ] Add project metadata indexing including languages, frameworks, build systems, and configuration files.
+  * [ ] Add duplicate code and similarity detection using graph relationships and code analysis.
+  * [ ] Add symbol reference tracking to find where functions, classes, and types are used across the project.
+  * [ ] Add unused code detection by identifying isolated symbols and unreachable components.
+  * [ ] Add API and interface relationship tracking between modules and external dependencies.
+  * [ ] Add test relationship tracking by connecting test files with the code they validate.
+  * [ ] Add documentation relationship tracking by connecting documentation files with related source code.
+  * [ ] Add build system analysis for detecting dependencies from files such as `Cargo.toml`, `package.json`, and `pyproject.toml`.
+  * [ ] Add configuration relationship tracking for understanding how configuration files affect project components.
+  * [ ] Add release and version history tracking through Git tags and project snapshots.
+  * [ ] Add code evolution analysis to show how project components change over time.
+  * [ ] Add project health analysis using graph metrics such as complexity, coupling, and dependency depth.
+  * [ ] Add graph-based project summaries for generating architecture documentation automatically.
+  * [ ] Add incremental indexing to update only changed project components instead of rebuilding the entire graph.
+  * [ ] Add background indexing support for keeping the project graph synchronized with file changes.
+  * [ ] Add graph filtering commands for exploring specific languages, modules, directories, or dependencies.
+  * [ ] Add graph comparison between project versions to visualize structural changes.
+  * [ ] Add import cycle detection and dependency loop analysis.
+
+
 
 ## License 📜
 
