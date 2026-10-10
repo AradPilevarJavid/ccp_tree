@@ -12,7 +12,7 @@ use ccp_tree::{
 };
 #[cfg(test)]
 use clap::Parser;
-use clap::{Command as ClapCommand, CommandFactory, FromArgMatches};
+use clap::{parser::ValueSource, Command as ClapCommand, CommandFactory, FromArgMatches};
 use std::env;
 use std::fs;
 use std::io::{self, Read};
@@ -32,6 +32,7 @@ fn main() -> Result<()> {
     }
     let matches = compact_help_command(Cli::command()).get_matches();
     let mut cli = Cli::from_arg_matches(&matches)?;
+    validate_root_options(&cli, &matches)?;
     let config = ccp_tree::load_default_config()?;
     apply_config(&mut cli, &matches, &config)?;
     if !matches!(cli.command, Some(Command::Update)) {
@@ -45,6 +46,19 @@ fn main() -> Result<()> {
         Some(Command::Templates(command)) => run_templates(command),
         None => run_copy(cli),
     }
+}
+
+fn validate_root_options(cli: &Cli, matches: &clap::ArgMatches) -> Result<()> {
+    if cli.command.is_none()
+        && matches.value_source("verbose") == Some(ValueSource::CommandLine)
+    {
+        anyhow::bail!(
+            "the -v/--verbose option cannot be used with the root command; \
+             verbose mode is available only for supported subcommands such as `ccp create`"
+        );
+    }
+
+    Ok(())
 }
 
 fn run_update() -> Result<()> {
@@ -410,6 +424,32 @@ mod tests {
             error.to_string(),
             "Options --raw and -s (structure with statistics) cannot be used together."
         );
+    }
+
+    #[test]
+    fn root_verbose_option_errors() {
+        let matches = Cli::command()
+            .try_get_matches_from(["ccp", "-v"])
+            .expect("-v should parse for the root-option validation");
+        let cli = Cli::from_arg_matches(&matches).expect("CLI should be constructed");
+
+        let error =
+            validate_root_options(&cli, &matches).expect_err("root verbose should be rejected");
+
+        assert_eq!(
+            error.to_string(),
+            "the -v/--verbose option cannot be used with the root command; verbose mode is available only for supported subcommands such as `ccp create`"
+        );
+    }
+
+    #[test]
+    fn subcommand_verbose_option_remains_valid() {
+        let matches = Cli::command()
+            .try_get_matches_from(["ccp", "create", "-v"])
+            .expect("create verbose should parse");
+        let cli = Cli::from_arg_matches(&matches).expect("CLI should be constructed");
+
+        validate_root_options(&cli, &matches).expect("subcommand verbose should be valid");
     }
 
     #[test]

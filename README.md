@@ -406,10 +406,12 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--no-content`              | Omit file contents in `.tree` output. |
 | `--security-scan`           | Analyze exported file contents for potential credentials. |
 | `--dry-run`                 | Preview the tree (colored) without writing. |
-| `--verbose`, `-v`           | Print extra progress info. |
 | `--quiet`, `-q`             | Suppress non‑essential output. |
 | `-o`, `--output <FILE>`     | Write output to a file instead of stdout. |
 | `-c`, `--clipboard`         | Copy output to clipboard (requires the `clipboard` feature). |
+
+Verbose mode is available for supported subcommands such as `ccp create`; it
+cannot be used with the root `ccp` command.
 
 ### `ccp launcher` options
 ### if you run ccp launcher --help you will see:
