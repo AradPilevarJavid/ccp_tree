@@ -40,7 +40,7 @@ CONFIGURATION:
   local settings, and explicit command-line arguments take priority over both.
 
 SEE ALSO:
-  ccp-generate(1), ccp-create(1), ccp-reverse(1), ccp-templates(1)"#;
+  ccp-generate(1), ccp-create(1), ccp-reverse(1), ccp-templates(1), ccp-launcher(1)"#;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -104,6 +104,7 @@ fn render_combined_manual(
             "create" => "ccp-create",
             "reverse" => "ccp-reverse",
             "templates" => "ccp-templates",
+            "launcher" => "ccp-launcher",
             _ => continue,
         };
         let mut rendered = Vec::new();
@@ -111,9 +112,7 @@ fn render_combined_manual(
         let body = String::from_utf8(rendered)?
             .lines()
             .filter(|line| {
-                !line.starts_with(".TH ")
-                    && !line.starts_with(".ie ")
-                    && !line.starts_with(".el ")
+                !line.starts_with(".TH ") && !line.starts_with(".ie ") && !line.starts_with(".el ")
             })
             .collect::<Vec<_>>()
             .join("\n");

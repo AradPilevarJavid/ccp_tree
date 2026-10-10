@@ -17,7 +17,7 @@ pub(crate) fn render_notebook_file(
         InspectedFile::Text(text) => text,
         InspectedFile::Binary(_) | InspectedFile::TooLarge { .. } => return Ok(None),
     };
-    let rendered = render_notebook(&text)
+    let rendered = render_notebook(text)
         .with_context(|| format!("failed to parse notebook {}", path.display()))?;
     Ok(Some(apply_content_options(rendered, options)))
 }

@@ -51,6 +51,7 @@ pub const DEFAULT_EXCLUDES: &[&str] = &[
     ".tmp/",
     "Thumbs.db",
     "desktop.ini",
+    "ccp-copy.desktop",
     "*.mp4",
     "*.zip",
     "*.tar.gz",
@@ -201,6 +202,11 @@ mod tests {
         assert!(should_exclude(Path::new("Cargo.lock"), false, &patterns));
         assert!(should_exclude(
             Path::new("docs/archive.tar.gz"),
+            false,
+            &patterns
+        ));
+        assert!(should_exclude(
+            Path::new("ccp-copy.desktop"),
             false,
             &patterns
         ));

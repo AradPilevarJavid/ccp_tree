@@ -3,8 +3,8 @@ use anyhow::{Context, Result};
 use ccp_tree::update;
 use ccp_tree::{
     apply_config,
-    cli::{Cli, Command, GenerateCommand, ReverseCommand, TemplatesCommand},
-    create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template,
+    cli::{Cli, Command, GenerateCommand, LauncherCommand, ReverseCommand, TemplatesCommand},
+    create_launcher, create_tree, estimate_tokens, fmt_colored_tree, list_templates, load_template,
     nodes_to_entries, parse_tree_definition, render_markdown_with_cache, render_raw_with_cache,
     render_structure_with_cache, render_tree_definition_with_cache,
     scan_snapshot_for_secrets_with_cache, snapshot, ContentOptions, FileInspectionCache,
@@ -39,6 +39,7 @@ fn main() -> Result<()> {
     }
     match cli.command {
         Some(Command::Update) => run_update(),
+        Some(Command::Launcher(command)) => run_launcher(command),
         Some(Command::Generate(command)) | Some(Command::Create(command)) => run_generate(command),
         Some(Command::Reverse(command)) => run_reverse(command),
         Some(Command::Templates(command)) => run_templates(command),
@@ -111,6 +112,12 @@ fn run_templates(command: TemplatesCommand) -> Result<()> {
             }
         }
     }
+    Ok(())
+}
+
+fn run_launcher(command: LauncherCommand) -> Result<()> {
+    let launcher = create_launcher(&command.root, command.force)?;
+    println!("Created launcher at {}", launcher.display());
     Ok(())
 }
 
@@ -480,8 +487,8 @@ mod tests {
 
     #[test]
     fn security_scan_is_opt_in_for_snapshot() {
-        let cli = Cli::try_parse_from(["ccp", "--security-scan"])
-            .expect("--security-scan should parse");
+        let cli =
+            Cli::try_parse_from(["ccp", "--security-scan"]).expect("--security-scan should parse");
 
         assert!(cli.security_scan);
     }
@@ -507,5 +514,37 @@ mod tests {
             panic!("templates command should parse");
         };
         assert_eq!(command.templates_dir, PathBuf::from("./custom-templates"));
+    }
+
+    #[test]
+    fn launcher_subcommand_defaults_to_current_directory() {
+        let cli = Cli::try_parse_from(["ccp", "launcher"]).expect("launcher command should parse");
+
+        let Some(Command::Launcher(command)) = cli.command else {
+            panic!("launcher command should parse");
+        };
+        assert_eq!(command.root, PathBuf::from("."));
+        assert!(!command.force);
+    }
+
+    #[test]
+    fn launcher_subcommand_accepts_target_directory_and_force() {
+        let cli = Cli::try_parse_from(["ccp", "launcher", "./my project", "--force"])
+            .expect("launcher command should parse");
+
+        let Some(Command::Launcher(command)) = cli.command else {
+            panic!("launcher command should parse");
+        };
+        assert_eq!(command.root, PathBuf::from("./my project"));
+        assert!(command.force);
+    }
+
+    #[test]
+    fn existing_reverse_and_templates_subcommands_still_parse() {
+        let reverse = Cli::try_parse_from(["ccp", "reverse", "."]).expect("reverse should parse");
+        assert!(matches!(reverse.command, Some(Command::Reverse(_))));
+
+        let templates = Cli::try_parse_from(["ccp", "templates"]).expect("templates should parse");
+        assert!(matches!(templates.command, Some(Command::Templates(_))));
     }
 }

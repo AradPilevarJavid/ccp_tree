@@ -27,15 +27,22 @@ pub fn list_templates(templates_dir: &Path) -> Result<Vec<AvailableTemplate>> {
 
     if templates_dir.exists() {
         if !templates_dir.is_dir() {
-            bail!("Templates path {} is not a directory", templates_dir.display());
+            bail!(
+                "Templates path {} is not a directory",
+                templates_dir.display()
+            );
         }
 
-        for entry in fs::read_dir(templates_dir)
-            .with_context(|| format!("Failed to read templates directory {}", templates_dir.display()))?
-        {
+        for entry in fs::read_dir(templates_dir).with_context(|| {
+            format!(
+                "Failed to read templates directory {}",
+                templates_dir.display()
+            )
+        })? {
             let entry = entry?;
             let path = entry.path();
-            let is_tree_file = path.extension().and_then(|extension| extension.to_str()) == Some("tree");
+            let is_tree_file =
+                path.extension().and_then(|extension| extension.to_str()) == Some("tree");
             let is_extensionless = path.extension().is_none();
             if !is_tree_file && !is_extensionless {
                 continue;

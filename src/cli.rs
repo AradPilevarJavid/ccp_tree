@@ -107,6 +107,8 @@ pub struct Cli {
 pub enum Command {
     /// Install the latest version from crates.io
     Update,
+    /// Create a desktop launcher that runs `ccp -c` for its folder
+    Launcher(LauncherCommand),
     /// Create files and directories from an indented .tree definition
     Generate(GenerateCommand),
     /// Alias for generate
@@ -161,6 +163,17 @@ pub struct TemplatesCommand {
     /// Directory containing custom .tree templates
     #[arg(long, default_value = "templates")]
     pub templates_dir: PathBuf,
+}
+
+#[derive(Parser)]
+pub struct LauncherCommand {
+    /// Directory where the launcher file is created
+    #[arg(default_value = ".")]
+    pub root: PathBuf,
+
+    /// Replace an existing CCP launcher file in the target directory
+    #[arg(long)]
+    pub force: bool,
 }
 
 #[derive(Parser)]

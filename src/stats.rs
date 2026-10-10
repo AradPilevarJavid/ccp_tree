@@ -100,7 +100,6 @@ mod tests {
     use crate::tree::{insert_entry, Snapshot};
     use std::collections::BTreeMap;
     use std::fs;
-    use std::path::PathBuf;
 
     #[test]
     fn compute_stats_counts_files_directories_text_lines_and_size() {
@@ -123,10 +122,7 @@ mod tests {
             &[String::from("src"), String::from("main.rs")],
             false,
         );
-        let snapshot = Snapshot {
-            root: PathBuf::from(root),
-            tree,
-        };
+        let snapshot = Snapshot { root, tree };
 
         let stats = compute_stats(&snapshot, 1_000, None);
 

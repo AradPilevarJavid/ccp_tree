@@ -291,7 +291,7 @@ fn decode_utf16(bytes: &[u8]) -> Option<String> {
     if !body.len().is_multiple_of(2) {
         return None;
     }
-    let code_units = body.chunks_exact(2).map(|chunk| {
+    let code_units = body.chunks(2).map(|chunk| {
         let pair = [chunk[0], chunk[1]];
         if little_endian {
             u16::from_le_bytes(pair)

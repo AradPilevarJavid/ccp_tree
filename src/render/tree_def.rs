@@ -92,7 +92,7 @@ fn render_tree_definition_entries(
             Ok(InspectedFile::Text(text)) if text.is_empty() => {
                 out.push_str(&format!("{}{}\n", indent, entry.name))
             }
-            Ok(InspectedFile::Text(text)) if is_single_line(&text) => {
+            Ok(InspectedFile::Text(text)) if is_single_line(text) => {
                 out.push_str(&format!("{}{}: {}\n", indent, entry.name, text));
             }
             Ok(InspectedFile::Text(text)) => {
@@ -108,13 +108,13 @@ fn render_tree_definition_entries(
                 "{}{}: <binary file; {}>\n",
                 indent,
                 entry.name,
-                format_metadata(&metadata),
+                format_metadata(metadata),
             )),
             Ok(InspectedFile::TooLarge { metadata, limit }) => out.push_str(&format!(
                 "{}{}: <file too large; {}; limit: {}>\n",
                 indent,
                 entry.name,
-                format_metadata(&metadata),
+                format_metadata(metadata),
                 format_bytes(*limit),
             )),
             Err(error) => out.push_str(&format!("{}{}: <error: {}>\n", indent, entry.name, error)),

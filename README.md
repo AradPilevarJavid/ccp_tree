@@ -33,6 +33,7 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 - 📋 **Clipboard support** – optional; copies output directly to the clipboard.
 - 🧹 **Flexible filtering** – include hidden files, skip default ignores, add custom glob patterns, limit file size.
 - 🎨 **Colored tree preview** – visual inspection with `--dry-run`.
+- 🖱️ **Desktop launcher generation (Linux)** – create a clickable launcher that runs `ccp -c` in that project folder.
 
 ---
 
@@ -248,6 +249,7 @@ ccp [ROOT] [OPTIONS]
 ccp reverse [ROOT] [OPTIONS]
 ccp generate [ROOT] [OPTIONS]
 ccp create [ROOT] [OPTIONS]        # alias for generate
+ccp launcher [ROOT] [OPTIONS]
 ```
 
 ### 1. 📸 Snapshot a folder (default)
@@ -303,6 +305,27 @@ Use `--force` to skip prompts, and `--quiet` to suppress them entirely.
 ```bash
 ccp generate --dry-run --input blueprint.tree
 ```
+
+### 4. 🖱️ Launcher – create a double-click file for `ccp -c` (Linux)
+
+```bash
+ccp launcher                       # create launcher in current directory
+ccp launcher /path/to/project      # create launcher in a specific directory
+ccp launcher /path/to/project --force
+```
+
+This creates `ccp-copy.desktop` in the target directory.
+Double-click it in your Linux file manager to run `ccp -c` against the
+directory containing that launcher.
+
+Notes:
+- Linux desktop support only in this release.
+- The launcher uses `ccp` from your `PATH` (no hardcoded binary path).
+- If `ccp` is missing, or `ccp -c` fails, errors are shown in a terminal window.
+- Most desktop environments require the file to be executable/trusted before
+  launching (`chmod +x ccp-copy.desktop`; GNOME may still require marking as trusted).
+- Existing unrelated `ccp-copy.desktop` files are never overwritten. Use
+  `--force` only to replace a previously generated CCP launcher.
 
 ---
 
@@ -387,6 +410,14 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--quiet`, `-q`             | Suppress non‑essential output. |
 | `-o`, `--output <FILE>`     | Write output to a file instead of stdout. |
 | `-c`, `--clipboard`         | Copy output to clipboard (requires the `clipboard` feature). |
+
+### `ccp launcher` options
+### if you run ccp launcher --help you will see:
+
+| Flag / Option                | Description |
+|------------------------------|-------------|
+| `[ROOT]`                     | Directory where `ccp-copy.desktop` is created (default: current directory). |
+| `--force`                    | Replace an existing CCP-generated launcher in the target directory. |
 
 ### `ccp generate` / `ccp create` options
 ### if you run ccp create --help you will see:
@@ -531,6 +562,7 @@ The full list is embedded in the source; it includes:
 
 - Build & cache directories: `target/`, `node_modules/`, `dist/`, `build/`, `.next/`, `__pycache__/`, `.cache/`, …
 - Version control: `.git/`
+- CCP launcher artifacts: `ccp-copy.desktop`
 - Lock files: `Cargo.lock`, `*.lock`
 - IDE / editor: `.idea/`, `.vscode/`, `*.swp`
 - OS files: `.DS_Store`, `Thumbs.db`
@@ -550,7 +582,7 @@ You can also create a `.mktreeignore` file in your project root to add custom ig
 ---
 ## Roadmap(TODO)
 some of these are already partly done.
-- [ ] Implement a button(possibly as a file) that if clicked would function like `ccp -c`.
+- [x] Implement a button(possibly as a file) that if clicked would function like `ccp -c`.
 - [ ] make updating easy. when i run the project it must auto-update(I'm still not sure about this one) 
 - [ ] Support XML output format
 - [ ] make MCP server + make a Claude/AI “Skill” package.

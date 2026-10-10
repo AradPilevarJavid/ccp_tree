@@ -3,6 +3,7 @@ pub mod config;
 pub mod exclude;
 pub mod file;
 pub mod git;
+pub mod launcher;
 pub mod parser;
 pub mod render;
 pub mod scaffold;
@@ -28,6 +29,7 @@ pub use file::{
     FileText, InspectedFile, MimeDetection,
 };
 pub use git::{detect_git_metadata, GitMetadata};
+pub use launcher::{create_launcher, LAUNCHER_FILE_NAME};
 pub use parser::{nodes_to_entries, parse_tree_definition, TreeNode};
 pub use render::{
     fmt_colored_tree, render_markdown, render_markdown_with_cache, render_markdown_with_options,
