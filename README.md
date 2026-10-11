@@ -37,10 +37,9 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 
 ---
 
-## Installation 🚀
+## Installation
 
-
-### From Crates.io (Linux/macOS/Windows)
+### Install from crates.io
 
 ```bash
 cargo install ccp_tree
@@ -68,14 +67,14 @@ cargo install ccp_tree --features clipboard
 > On Linux, the clipboard feature tries `wl-copy` (Wayland) and `xclip` (X11) first, then falls back to the `arboard` crate. No extra configuration needed. 👍
 
 
-### Arch 
-```
+### Install from the Arch User Repository
+
+```bash
 yay -S ccp_tree
 ```
 
 
-
-### NixOS
+### Install with NixOS
 
 #### Add ccp as a flake input
 
