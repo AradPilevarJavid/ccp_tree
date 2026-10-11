@@ -40,7 +40,7 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 ## Installation 🚀
 
 
-### From Crates.io(Linux/MacOs/windows)
+### From Crates.io (Linux/macOS/Windows)
 
 ```bash
 cargo install ccp_tree
@@ -55,6 +55,8 @@ ccp update
 When a newer version is available, normal `ccp` commands print a
 non-blocking notification with the `ccp update` command. The check uses
 crates.io and does not prevent offline use.
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release changes.
 
 This installs the `ccp` binary.  
 To enable clipboard support (optional, works out‑of‑the‑box on most systems):
@@ -626,6 +628,10 @@ Copyright (c) 2026 Arad Pilevar Javid.
 
 ## Contributing 🤝
 
-Feedback, issues, and pull requests are welcome!  
-Make sure to run `cargo test` before submitting.  
-If you want to add a new built‑in template, drop a `.tree` file into the `templates/` directory – the build script picks it up automatically.
+Feedback, issues, and pull requests are welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for development checks and pull request
+guidance. To add a built-in template, place a `.tree` file in the `templates/`
+directory; the build script picks it up automatically.
+
+Please report security vulnerabilities privately according to
+[SECURITY.md](SECURITY.md), not through a public issue.

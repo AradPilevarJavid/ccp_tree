@@ -9,7 +9,7 @@
 ## [1.1.2] - 2026-09-27
 
 ### Changed
-- Security analysis is now opt-in via `--security-scan` and disabled by default.It is now blazing fast.
+- Security analysis is now opt-in via `--security-scan` and disabled by default.
 
 ## [1.1.1] - 2026-09-27
 
