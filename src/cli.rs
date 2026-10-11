@@ -91,7 +91,7 @@ pub struct Cli {
     pub dry_run: bool,
 
     /// Print more progress details
-    #[arg(long, short)]
+    #[arg(long, short, hide = true)]
     pub verbose: bool,
 
     /// Suppress non-essential messages
