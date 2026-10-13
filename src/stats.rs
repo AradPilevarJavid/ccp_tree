@@ -150,4 +150,44 @@ mod tests {
         assert!(estimate_tokens(text) > 0);
         assert_eq!(estimate_tokens(text), estimate_tokens(text));
     }
+
+    #[test]
+    fn filtered_snapshot_statistics_count_only_matching_files() {
+        let root = std::env::temp_dir().join(format!(
+            "ccp-filtered-stats-test-{}",
+            std::process::id()
+        ));
+        let source_dir = root.join("src");
+        fs::create_dir_all(&source_dir).expect("source directory should be created");
+        let rust_file = source_dir.join("main.rs");
+        fs::write(&rust_file, "fn main() {}\n").expect("Rust file should be written");
+        fs::write(source_dir.join("script.py"), "print('not Rust')\n")
+            .expect("Python file should be written");
+        fs::write(root.join("README.md"), "not Rust\n").expect("README should be written");
+
+        let snapshot = crate::tree::snapshot(
+            &root,
+            &crate::tree::WalkOptions {
+                include_hidden: false,
+                no_ignore: true,
+                include_useless: true,
+                exclude: Vec::new(),
+                mktree_ignore: false,
+                max_size: 1_000,
+                file_type: Some("rs".to_string()),
+            },
+        )
+        .expect("filtered snapshot should succeed");
+        let stats = compute_stats(&snapshot, 1_000, None);
+
+        assert_eq!(stats.files, 1);
+        assert_eq!(stats.dirs, 1);
+        assert_eq!(stats.lines, 1);
+        assert_eq!(
+            stats.size,
+            fs::metadata(&rust_file).expect("Rust file metadata should exist").len()
+        );
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
 }

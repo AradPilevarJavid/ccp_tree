@@ -255,7 +255,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         exclude: command.exclude,
         mktree_ignore: true,
         max_size: command.max_size,
-        file_type: None,
+        file_type: command.file_type,
     };
 
     let scan = snapshot(&command.root, &options)?;

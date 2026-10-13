@@ -212,6 +212,10 @@ pub struct ReverseCommand {
     #[arg(short = 'a', long = "all")]
     pub all: bool,
 
+    /// Include only files with this extension
+    #[arg(long)]
+    pub file_type: Option<String>,
+
     /// Glob patterns to exclude (can be repeated)
     #[arg(short = 'e', long = "exclude")]
     pub exclude: Vec<String>,

@@ -381,4 +381,75 @@ mod tests {
         assert!(!snapshot.tree.contains_key("target"));
         fs::remove_dir_all(root).expect("test root should be removed");
     }
+
+    #[test]
+    fn file_type_respects_user_exclusions_and_ignore_modes() {
+        let root = std::env::temp_dir().join(format!(
+            "ccp-file-type-ignores-test-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(root.join("target")).expect("target directory should be created");
+        fs::write(root.join(".gitignore"), "ignored_git.mp4\n")
+            .expect(".gitignore should be written");
+        fs::write(root.join(".ignore"), "ignored_ignore.mp4\n")
+            .expect(".ignore should be written");
+        fs::write(root.join(".mktreeignore"), "ignored_mktree.mp4\n")
+            .expect(".mktreeignore should be written");
+        for name in [
+            "kept.mp4",
+            "ignored_git.mp4",
+            "ignored_ignore.mp4",
+            "ignored_mktree.mp4",
+            "explicit.mp4",
+        ] {
+            fs::write(root.join(name), [1, 2, 3]).expect("fixture file should be written");
+        }
+        fs::write(root.join("target/generated.mp4"), [4, 5, 6])
+            .expect("generated file should be written");
+
+        let scan = |include_useless: bool, no_ignore: bool, include_hidden: bool| {
+            snapshot(
+                &root,
+                &WalkOptions {
+                    include_hidden,
+                    no_ignore,
+                    include_useless,
+                    exclude: vec!["explicit.mp4".to_string()],
+                    mktree_ignore: true,
+                    max_size: 1_000,
+                    file_type: Some("mp4".to_string()),
+                },
+            )
+            .expect("filtered snapshot should succeed")
+        };
+
+        let normal = scan(false, false, false);
+        assert!(normal.tree.contains_key("kept.mp4"));
+        assert!(!normal.tree.contains_key("ignored_git.mp4"));
+        assert!(!normal.tree.contains_key("ignored_ignore.mp4"));
+        assert!(!normal.tree.contains_key("ignored_mktree.mp4"));
+        assert!(!normal.tree.contains_key("explicit.mp4"));
+        assert!(!normal.tree.contains_key("target"));
+
+        let no_ignore = scan(false, true, false);
+        assert!(no_ignore.tree.contains_key("kept.mp4"));
+        assert!(no_ignore.tree.contains_key("ignored_git.mp4"));
+        assert!(no_ignore.tree.contains_key("ignored_ignore.mp4"));
+        assert!(!no_ignore.tree.contains_key("ignored_mktree.mp4"));
+        assert!(!no_ignore.tree.contains_key("explicit.mp4"));
+        assert!(!no_ignore.tree.contains_key("target"));
+
+        let all = scan(true, true, true);
+        assert!(all.tree.contains_key("kept.mp4"));
+        assert!(all.tree.contains_key("ignored_git.mp4"));
+        assert!(all.tree.contains_key("ignored_ignore.mp4"));
+        assert!(!all.tree.contains_key("ignored_mktree.mp4"));
+        assert!(!all.tree.contains_key("explicit.mp4"));
+        assert!(all
+            .tree
+            .get("target")
+            .is_some_and(|entry| entry.children.contains_key("generated.mp4")));
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
 }

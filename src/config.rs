@@ -88,6 +88,15 @@ pub fn apply_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Res
                 config.no_ignore,
             );
             set_if_not_cli(matches, "all", &mut command.all, config.all);
+            set_optional_if_not_cli(
+                matches,
+                "file_type",
+                &mut command.file_type,
+                config.file_type.clone(),
+            );
+            if let Some(file_type) = &command.file_type {
+                normalize_file_type(file_type)?;
+            }
             set_if_not_cli(
                 matches,
                 "exclude",

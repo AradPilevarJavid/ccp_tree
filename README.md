@@ -260,6 +260,7 @@ ccp launcher [ROOT] [OPTIONS]
 ```bash
 ccp                          # scan current directory
 ccp /path/to/project -s      # structure only
+ccp reverse /path/to/project --file-type rs  # Rust-only .tree definition
 ccp /path/to/project -s --file-type rs  # only Rust files and their parent directories
 ccp path/to/notebook.ipynb   # snapshot one notebook directly
 ccp -r                       # raw file contents only
