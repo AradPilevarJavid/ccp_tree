@@ -263,7 +263,7 @@ ccp /path/to/project -s      # structure only
 ccp reverse /path/to/project --file-type rs  # Rust-only .tree definition
 ccp /path/to/project -s --file-type rs  # only Rust files and their parent directories
 ccp path/to/notebook.ipynb   # snapshot one notebook directly
-ccp -r                       # raw file contents only
+ccp --raw                    # raw file contents only
 ccp --reverse                # .tree definition
 ccp --reverse --no-content   # .tree definition without file contents
 ```
@@ -407,7 +407,8 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--max-size <BYTES>`        | Skip files larger than this size (default: 1 MB). |
 | `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |
-| `--raw`, `-r`               | Output raw file contents only; cannot be combined with `-s`. |
+| `--raw`                     | Output raw file contents only; cannot be combined with `-s`. |
+| `-r`                        | Apply character limits from the end of each file. |
 | `--reverse`                 | Output in `.tree` definition format. |
 | `--no-content`              | Omit file contents in `.tree` output. |
 | `--security-scan`           | Analyze exported file contents for potential credentials. |
