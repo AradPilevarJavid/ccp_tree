@@ -387,6 +387,7 @@ mod tests {
         let root =
             std::env::temp_dir().join(format!("ccp-file-type-ignores-test-{}", std::process::id()));
         fs::create_dir_all(root.join("target")).expect("target directory should be created");
+        fs::create_dir_all(root.join(".git")).expect("Git repository marker should be created");
         fs::write(root.join(".gitignore"), "ignored_git.mp4\n")
             .expect(".gitignore should be written");
         fs::write(root.join(".ignore"), "ignored_ignore.mp4\n").expect(".ignore should be written");
