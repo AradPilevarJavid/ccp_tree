@@ -445,10 +445,11 @@ mod tests {
         assert!(all.tree.contains_key("ignored_ignore.mp4"));
         assert!(!all.tree.contains_key("ignored_mktree.mp4"));
         assert!(!all.tree.contains_key("explicit.mp4"));
-        assert!(all
+        let target = all
             .tree
             .get("target")
-            .is_some_and(|entry| entry.children.contains_key("generated.mp4")));
+            .expect("target should be included with --all");
+        assert!(target.children.contains_key("generated.mp4"));
 
         fs::remove_dir_all(root).expect("test root should be removed");
     }

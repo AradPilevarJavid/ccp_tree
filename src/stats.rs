@@ -185,7 +185,9 @@ mod tests {
         assert_eq!(stats.lines, 1);
         assert_eq!(
             stats.size,
-            fs::metadata(&rust_file).expect("Rust file metadata should exist").len()
+            fs::metadata(&rust_file)
+                .expect("Rust file metadata should exist")
+                .len()
         );
 
         fs::remove_dir_all(root).expect("test root should be removed");
