@@ -489,6 +489,28 @@ mod tests {
     }
 
     #[test]
+    fn reverse_file_type_config_is_used_unless_cli_overrides_it() {
+        let (mut cli, matches) = parse(&["ccp", "reverse"]);
+        let config = Config {
+            file_type: Some(".MP4".to_string()),
+            ..Config::default()
+        };
+
+        apply_config(&mut cli, &matches, &config).expect("config should apply");
+        let Some(Command::Reverse(command)) = cli.command else {
+            panic!("reverse command should parse");
+        };
+        assert_eq!(command.file_type.as_deref(), Some(".MP4"));
+
+        let (mut cli, matches) = parse(&["ccp", "reverse", "--file-type", "rs"]);
+        apply_config(&mut cli, &matches, &config).expect("config should apply");
+        let Some(Command::Reverse(command)) = cli.command else {
+            panic!("reverse command should parse");
+        };
+        assert_eq!(command.file_type.as_deref(), Some("rs"));
+    }
+
+    #[test]
     fn generate_uses_configured_templates_dir_unless_cli_overrides_it() {
         let (mut cli, matches) = parse(&["ccp", "create", "demo"]);
         let config = Config {

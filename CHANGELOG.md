@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0] - 2026-10-13
+
+### Added
+- Add `--file-type <EXTENSION>` to include files by their final extension while preserving the directories needed to reach them.
+- Support file-type filtering in `.ccprc` and the `ccp reverse` subcommand, with command-line values taking precedence over configuration.
+
+### Changed
+- Explicitly requested file types can bypass matching built-in file-extension exclusions while existing user exclusions and ignore rules remain in effect.
+
 ## [1.1.3] - 2026-09-29
 
 ### Added
