@@ -153,10 +153,8 @@ mod tests {
 
     #[test]
     fn filtered_snapshot_statistics_count_only_matching_files() {
-        let root = std::env::temp_dir().join(format!(
-            "ccp-filtered-stats-test-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("ccp-filtered-stats-test-{}", std::process::id()));
         let source_dir = root.join("src");
         fs::create_dir_all(&source_dir).expect("source directory should be created");
         let rust_file = source_dir.join("main.rs");

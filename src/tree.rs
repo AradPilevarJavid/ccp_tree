@@ -384,15 +384,12 @@ mod tests {
 
     #[test]
     fn file_type_respects_user_exclusions_and_ignore_modes() {
-        let root = std::env::temp_dir().join(format!(
-            "ccp-file-type-ignores-test-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("ccp-file-type-ignores-test-{}", std::process::id()));
         fs::create_dir_all(root.join("target")).expect("target directory should be created");
         fs::write(root.join(".gitignore"), "ignored_git.mp4\n")
             .expect(".gitignore should be written");
-        fs::write(root.join(".ignore"), "ignored_ignore.mp4\n")
-            .expect(".ignore should be written");
+        fs::write(root.join(".ignore"), "ignored_ignore.mp4\n").expect(".ignore should be written");
         fs::write(root.join(".mktreeignore"), "ignored_mktree.mp4\n")
             .expect(".mktreeignore should be written");
         for name in [
