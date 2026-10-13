@@ -538,6 +538,7 @@ mod tests {
                 exclude: Vec::new(),
                 mktree_ignore: true,
                 max_size: 10_000,
+                file_type: None,
             },
         )
         .expect("file root should be accepted");

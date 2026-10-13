@@ -29,12 +29,36 @@ pub struct WalkOptions {
     pub exclude: Vec<String>,
     pub mktree_ignore: bool,
     pub max_size: u64,
+    pub file_type: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Snapshot {
     pub root: PathBuf,
     pub tree: BTreeMap<String, Entry>,
+}
+
+pub fn normalize_file_type(file_type: &str) -> Result<String> {
+    let trimmed = file_type.trim();
+    let normalized = trimmed.strip_prefix('.').unwrap_or(trimmed);
+    if normalized.is_empty()
+        || normalized.contains('.')
+        || normalized.contains('/')
+        || normalized.contains('\\')
+    {
+        anyhow::bail!("file type must be a single extension such as `rs` or `.rs`");
+    }
+    Ok(normalized.to_ascii_lowercase())
+}
+
+fn file_matches_type(path: &Path, file_type: Option<&str>) -> bool {
+    match file_type {
+        None => true,
+        Some(file_type) => path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| extension.eq_ignore_ascii_case(file_type)),
+    }
 }
 
 pub fn insert_entry(root: &mut BTreeMap<String, Entry>, components: &[String], is_dir: bool) {
@@ -54,6 +78,11 @@ pub fn insert_entry(root: &mut BTreeMap<String, Entry>, components: &[String], i
 }
 
 pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
+    let file_type = options
+        .file_type
+        .as_deref()
+        .map(normalize_file_type)
+        .transpose()?;
     if root.is_file() {
         let parent = root.parent().unwrap_or_else(|| Path::new("."));
         let name = root
@@ -62,7 +91,9 @@ pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
             .to_string_lossy()
             .into_owned();
         let mut tree = BTreeMap::new();
-        insert_entry(&mut tree, &[name], false);
+        if file_matches_type(root, file_type.as_deref()) {
+            insert_entry(&mut tree, &[name], false);
+        }
         return Ok(Snapshot {
             root: parent.to_path_buf(),
             tree,
@@ -77,6 +108,9 @@ pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
     } else {
         load_default_exclude_patterns()?
     };
+    if let Some(file_type) = file_type.as_deref() {
+        exclude_patterns.retain(|pattern| !pattern.targets_file_type(file_type));
+    }
     exclude_patterns.extend(load_ignore_patterns(
         &root,
         &options.exclude,
@@ -119,7 +153,9 @@ pub fn snapshot(root: &Path, options: &WalkOptions) -> Result<Snapshot> {
             .file_type()
             .map(|file_type| file_type.is_dir())
             .unwrap_or(false);
-        insert_entry(&mut tree, &components, is_dir);
+        if file_type.is_none() || (!is_dir && file_matches_type(path, file_type.as_deref())) {
+            insert_entry(&mut tree, &components, is_dir);
+        }
     }
 
     Ok(Snapshot { root, tree })
@@ -237,6 +273,7 @@ mod tests {
                 exclude: Vec::new(),
                 mktree_ignore: true,
                 max_size: 1_000,
+                file_type: None,
             },
         )
         .expect("file root should be accepted");
@@ -244,6 +281,104 @@ mod tests {
         assert_eq!(snapshot.root, root);
         assert!(snapshot.tree.contains_key("analysis.ipynb"));
 
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn snapshot_filters_files_by_final_extension_and_preserves_parents() {
+        let root = std::env::temp_dir().join(format!("ccp-file-type-test-{}", std::process::id()));
+        fs::create_dir_all(root.join("src/nested")).expect("test directories should be created");
+        fs::write(root.join("src/main.RS"), "fn main() {}").expect("Rust file should be written");
+        fs::write(root.join("src/nested/lib.rs"), "pub fn lib() {}")
+            .expect("nested Rust file should be written");
+        fs::write(root.join("src/main.rs.txt"), "not Rust").expect("text file should be written");
+        fs::write(root.join("README"), "no extension")
+            .expect("extensionless file should be written");
+        fs::create_dir(root.join("folder.mp4"))
+            .expect("extension-like directory should be created");
+
+        let snapshot = snapshot(
+            &root,
+            &WalkOptions {
+                include_hidden: false,
+                no_ignore: true,
+                include_useless: true,
+                exclude: Vec::new(),
+                mktree_ignore: false,
+                max_size: 1_000,
+                file_type: Some(".rS".to_string()),
+            },
+        )
+        .expect("filtered snapshot should succeed");
+
+        assert!(snapshot.tree.contains_key("src"));
+        let src = snapshot.tree.get("src").expect("src should be retained");
+        assert!(src.children.contains_key("main.RS"));
+        let nested = src
+            .children
+            .get("nested")
+            .expect("nested should be retained");
+        assert!(nested.children.contains_key("lib.rs"));
+        assert!(!src.children.contains_key("main.rs.txt"));
+        assert!(!snapshot.tree.contains_key("README"));
+        assert!(!snapshot.tree.contains_key("folder.mp4"));
+
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn snapshot_filters_a_nonmatching_file_root_without_error() {
+        let root =
+            std::env::temp_dir().join(format!("ccp-file-type-root-test-{}", std::process::id()));
+        fs::create_dir_all(&root).expect("test root should be created");
+        let file = root.join("notes.txt");
+        fs::write(&file, "notes").expect("file should be written");
+
+        let snapshot = snapshot(
+            &file,
+            &WalkOptions {
+                include_hidden: false,
+                no_ignore: false,
+                include_useless: false,
+                exclude: Vec::new(),
+                mktree_ignore: true,
+                max_size: 1_000,
+                file_type: Some("rs".to_string()),
+            },
+        )
+        .expect("nonmatching file root should succeed");
+
+        assert!(snapshot.tree.is_empty());
+        fs::remove_dir_all(root).expect("test root should be removed");
+    }
+
+    #[test]
+    fn file_type_narrowly_overrides_matching_default_file_exclusion() {
+        let root = std::env::temp_dir().join(format!(
+            "ccp-file-type-default-exclude-test-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(root.join("target")).expect("target directory should be created");
+        fs::write(root.join("video.mp4"), [0, 1, 2]).expect("video should be written");
+        fs::write(root.join("target/nested.mp4"), [3, 4, 5])
+            .expect("nested video should be written");
+
+        let snapshot = snapshot(
+            &root,
+            &WalkOptions {
+                include_hidden: false,
+                no_ignore: false,
+                include_useless: false,
+                exclude: Vec::new(),
+                mktree_ignore: true,
+                max_size: 1_000,
+                file_type: Some("mp4".to_string()),
+            },
+        )
+        .expect("filtered snapshot should succeed");
+
+        assert!(snapshot.tree.contains_key("video.mp4"));
+        assert!(!snapshot.tree.contains_key("target"));
         fs::remove_dir_all(root).expect("test root should be removed");
     }
 }

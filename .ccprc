@@ -6,6 +6,7 @@
 # include_hidden = false
 # no_ignore = false
 # all = false
+# file_type = "rs"
 # exclude = ["*.generated", "secrets/"]
 # max_size = 1048576
 # max_chars = 12000

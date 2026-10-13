@@ -104,6 +104,16 @@ impl ExcludePattern {
             .filter_map(|component| component.as_os_str().to_str())
             .any(|component| self.pattern.matches(component))
     }
+
+    pub fn targets_file_type(&self, extension: &str) -> bool {
+        if self.directory_only || self.raw.contains('/') || !self.raw.starts_with("*.") {
+            return false;
+        }
+        self.raw
+            .strip_prefix("*.")
+            .and_then(|value| value.rsplit('.').next())
+            .is_some_and(|value| value.eq_ignore_ascii_case(extension))
+    }
 }
 
 pub fn load_ignore_patterns(

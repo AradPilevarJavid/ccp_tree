@@ -32,6 +32,7 @@ It’s built for quick pasting into chat windows, code reviews, bug reports, and
 - 🔍 **Smart ignores** – respects `.gitignore` / `.ignore`, plus a comprehensive default exclude list (node_modules, target, __pycache__, …).
 - 📋 **Clipboard support** – optional; copies output directly to the clipboard.
 - 🧹 **Flexible filtering** – include hidden files, skip default ignores, add custom glob patterns, limit file size.
+- 🗂️ **File-type filtering** – include only files with a requested extension while preserving their directory paths.
 - 🎨 **Colored tree preview** – visual inspection with `--dry-run`.
 - 🖱️ **Desktop launcher generation (Linux)** – create a clickable launcher that runs `ccp -c` in that project folder.
 
@@ -202,6 +203,7 @@ templates_dir = "templates"
 clipboard = true
 max_size = 1048576
 max_chars = 12000
+file_type = "rs"
 exclude = ["*.generated", "secrets/"]
 security_scan = false
 quiet = false
@@ -212,7 +214,7 @@ Relative `templates_dir` paths are resolved from the directory containing the
 array instead of being appended.
 
 Most reusable flags can be configured, including `include_hidden`, `no_ignore`,
-`all`, `head`, `tail`, `from_end`, `no_content`, `structure`,
+`all`, `file_type`, `head`, `tail`, `from_end`, `no_content`, `structure`,
 `reverse`, `raw`, `dry_run`, `verbose`, `quiet`, `security_scan`, and `force`.
 
 If `clipboard = true`, use `--no-clipboard` for a single command that should
@@ -258,6 +260,7 @@ ccp launcher [ROOT] [OPTIONS]
 ```bash
 ccp                          # scan current directory
 ccp /path/to/project -s      # structure only
+ccp /path/to/project -s --file-type rs  # only Rust files and their parent directories
 ccp path/to/notebook.ipynb   # snapshot one notebook directly
 ccp -r                       # raw file contents only
 ccp --reverse                # .tree definition
@@ -399,6 +402,7 @@ This definition can be saved as a `.tree` file and reused with `ccp generate`.
 | `--no-ignore`               | Ignore `.gitignore` and `.ignore` files. |
 | `-a`, `--all`               | Include default‑excluded directories (target, node_modules, …). |
 | `-e`, `--exclude <PAT>`     | Exclude additional glob patterns (repeatable). |
+| `--file-type <EXTENSION>`   | Include only files with this final extension (for example `rs` or `.rs`). |
 | `--max-size <BYTES>`        | Skip files larger than this size (default: 1 MB). |
 | `--max-chars <CHARS>`        | Limit the number of characters read from each file (for AI context windows). |
 | `--structure`, `-s`         | Output only the directory tree (Markdown). |

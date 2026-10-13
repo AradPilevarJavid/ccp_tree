@@ -49,9 +49,7 @@ fn main() -> Result<()> {
 }
 
 fn validate_root_options(cli: &Cli, matches: &clap::ArgMatches) -> Result<()> {
-    if cli.command.is_none()
-        && matches.value_source("verbose") == Some(ValueSource::CommandLine)
-    {
+    if cli.command.is_none() && matches.value_source("verbose") == Some(ValueSource::CommandLine) {
         anyhow::bail!(
             "the -v/--verbose option cannot be used with the root command; \
              verbose mode is available only for supported subcommands such as `ccp create`"
@@ -145,6 +143,7 @@ fn run_copy(cli: Cli) -> Result<()> {
         exclude: cli.exclude,
         mktree_ignore: true,
         max_size: cli.max_size,
+        file_type: cli.file_type,
     };
     let scan = snapshot(&cli.root, &options)?;
 
@@ -256,6 +255,7 @@ fn run_reverse(command: ReverseCommand) -> Result<()> {
         exclude: command.exclude,
         mktree_ignore: true,
         max_size: command.max_size,
+        file_type: None,
     };
 
     let scan = snapshot(&command.root, &options)?;

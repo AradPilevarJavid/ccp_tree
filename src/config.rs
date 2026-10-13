@@ -1,4 +1,5 @@
 use crate::cli::{Cli, Command};
+use crate::tree::normalize_file_type;
 use anyhow::{Context, Result};
 use clap::parser::ValueSource;
 use clap::ArgMatches;
@@ -16,6 +17,7 @@ pub struct Config {
     pub include_hidden: Option<bool>,
     pub no_ignore: Option<bool>,
     pub all: Option<bool>,
+    pub file_type: Option<String>,
     pub exclude: Option<Vec<String>>,
     pub max_size: Option<u64>,
     pub max_chars: Option<u64>,
@@ -188,6 +190,15 @@ fn apply_copy_config(cli: &mut Cli, matches: &ArgMatches, config: &Config) -> Re
     );
     set_if_not_cli(matches, "no_ignore", &mut cli.no_ignore, config.no_ignore);
     set_if_not_cli(matches, "all", &mut cli.all, config.all);
+    set_optional_if_not_cli(
+        matches,
+        "file_type",
+        &mut cli.file_type,
+        config.file_type.clone(),
+    );
+    if let Some(file_type) = &cli.file_type {
+        normalize_file_type(file_type)?;
+    }
     set_if_not_cli(matches, "exclude", &mut cli.exclude, config.exclude.clone());
     set_if_not_cli(matches, "max_size", &mut cli.max_size, config.max_size);
     set_optional_if_not_cli(matches, "max_chars", &mut cli.max_chars, config.max_chars);
@@ -358,6 +369,7 @@ impl Config {
             include_hidden,
             no_ignore,
             all,
+            file_type,
             exclude,
             max_size,
             max_chars,
@@ -449,6 +461,22 @@ mod tests {
         assert_eq!(cli.max_size, 1_048_576);
         assert!(cli.raw);
         assert!(!cli.structure);
+    }
+
+    #[test]
+    fn file_type_config_is_used_unless_cli_overrides_it() {
+        let (mut cli, matches) = parse(&["ccp"]);
+        let config = Config {
+            file_type: Some(".MP4".to_string()),
+            ..Config::default()
+        };
+
+        apply_config(&mut cli, &matches, &config).expect("config should apply");
+        assert_eq!(cli.file_type.as_deref(), Some(".MP4"));
+
+        let (mut cli, matches) = parse(&["ccp", "--file-type", "rs"]);
+        apply_config(&mut cli, &matches, &config).expect("config should apply");
+        assert_eq!(cli.file_type.as_deref(), Some("rs"));
     }
 
     #[test]

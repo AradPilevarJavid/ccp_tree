@@ -45,4 +45,7 @@ pub use stats::{
     ProjectStats,
 };
 pub use template::{list_templates, load_template, AvailableTemplate, TemplateSource};
-pub use tree::{collect_files, fmt_tree, insert_entry, snapshot, Entry, Snapshot, WalkOptions};
+pub use tree::{
+    collect_files, fmt_tree, insert_entry, normalize_file_type, snapshot, Entry, Snapshot,
+    WalkOptions,
+};
